@@ -58,6 +58,7 @@ void IMR_Sequential::run(std::ifstream &input_file, std::ofstream &output_file){
             else if(field == 5) trace_stream >> trace.size;
         }
         
+        trace.timestamp *= 1000.0;
         trace.address /= 512;
         trace.size /= 512;
 

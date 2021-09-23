@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
+#include <queue>
 
 enum Update_Method{
     IN_PLACE,
@@ -85,6 +86,10 @@ struct Request{
     device(device)
     {}
 
+    bool operator<(const Request &right) const{
+        return !(timestamp < right.timestamp);
+    }
+
     double timestamp;
     double response;
     char iotype;
@@ -92,6 +97,8 @@ struct Request{
     size_t size;
     size_t device;
 };
+
+extern std::priority_queue<Request> order_queue;
 
 static std::ostream& operator<<(std::ostream &out, const Request &right){
     out 
@@ -121,8 +128,10 @@ public:
     void read(const Request &request, std::ostream &output_file);
     virtual void write(const Request &, std::ostream &) = 0;
 
-    // * for output
+    // * for I/O
     void write_requests_file(const std::vector<Request> &requests, std::ostream &out_file);
+    void read_file(std::istream &);
+    void write_file(std::ostream &);
 
     // * sub-functions
     

@@ -49,12 +49,12 @@ else
 	mkdir -p obj
 endif
 
-# clear .exe/.out and .o
-clear:
+# clean .exe/.out and .o
+clean:
 ifeq ($(OS), Windows_NT)
 	del .\obj\*.o
-	del Skyrmion.exe
+	del IMR.exe
 else
 	rm ./obj/*.o
-	rm ./Skyrmion
+	rm ./IMR
 endif

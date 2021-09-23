@@ -44,34 +44,27 @@ int main(int argc, char **argv){
     output_file << fixed;
 
     mode_parser(setting_file);
+    IMR_Base *disk = nullptr;
 
     // * redirect to differnt mode
     if(MODE == "PARTITION"){
-        using namespace IMR_Partition;
-
-        initialize(setting_file);
-        run(input_file, output_file);
-        evaluation();
+        disk = new IMR_Partition;
     }
     else if(MODE == "SEQUENTIAL"){
-        using namespace IMR_Sequential;
-        
-        initialize(setting_file);
-        run(input_file, output_file);
-        evaluation();
+        disk = new IMR_Sequential;
     }
     else if(MODE == "CROSSTRACK"){
-        using namespace IMR_Crosstrack;
-        
-        initialize(setting_file);
-        run(input_file, output_file);
-        evaluation();
+        disk = new IMR_Crosstrack;
     }
     else{
         cerr << "<error> " << MODE << endl;
         cerr << "<error> wrong MODE argument" << endl;
         exit(EXIT_FAILURE);
     }
+
+    disk->initialize(setting_file);
+    disk->run(input_file, output_file);
+    disk->evaluation();
 
     clog << "<log> " << argv[2] << " finished" << endl;
 

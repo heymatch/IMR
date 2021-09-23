@@ -1,5 +1,4 @@
 #include "IMR_Crosstrack.h"
-using namespace IMR_Base;
 
 void IMR_Crosstrack::initialize(std::ifstream &setting_file){
     // * init options
@@ -62,21 +61,23 @@ void IMR_Crosstrack::run(std::ifstream &input_file, std::ofstream &output_file){
         // * read request
         if(trace.iotype == 'R' || trace.iotype == '1'){
             trace.iotype = 'R';
-            
             read(trace, output_file);
         }
         // * write request
         else if(trace.iotype == 'W' || trace.iotype == '0'){
             trace.iotype = 'W';
-
-            if(options.UPDATE_METHOD == Update_Method::IN_PLACE){
-                inplace_crosstrack_write(trace, output_file);
-            }
-            else if(options.UPDATE_METHOD == Update_Method::OUT_PLACE){
-                outplace_crosstrack_write(trace, output_file);
-            }
+            write(trace, output_file);
         }
 
+    }
+}
+
+void IMR_Crosstrack::write(const Request &trace, std::ostream &output_file){
+    if(options.UPDATE_METHOD == Update_Method::IN_PLACE){
+        inplace_crosstrack_write(trace, output_file);
+    }
+    else if(options.UPDATE_METHOD == Update_Method::OUT_PLACE){
+        outplace_crosstrack_write(trace, output_file);
     }
 }
 

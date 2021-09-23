@@ -1,5 +1,4 @@
 #include "IMR_Partition.h"
-using namespace IMR_Base;
 
 void IMR_Partition::initialize(std::ifstream &setting_file){
     // * init options
@@ -36,7 +35,7 @@ void IMR_Partition::run(std::ifstream &input_file, std::ofstream &output_file){
     size_t processing = 0;
 
     while(std::getline(input_file, line)){
-        if(processing % 1000000 == 0)
+        if(processing % 100 == 0)
             std::clog << "<log> processing " << processing << std::endl;
         processing += 1;
 
@@ -60,31 +59,41 @@ void IMR_Partition::run(std::ifstream &input_file, std::ofstream &output_file){
         trace.address >>= 9;
         trace.size >>= 9;
 
+        output_file << std::flush;
+
         // * read request
         if(trace.iotype == 'R' || trace.iotype == '1'){
             trace.iotype = '1';
-            
             IMR_Partition::read(trace, output_file);
         }
         // * write request
         else if(trace.iotype == 'W' || trace.iotype == '0'){
             trace.iotype = '0';
-
-            if(trace.size > options.HOT_DATA_DEF_SIZE){
-                cold_data_write(trace, output_file);
-            }
-            else{
-                hot_data_write(trace, output_file);
-            }
+            write(trace, output_file);
         }
         else{
             std::clog << "<log> " << trace << std::endl;
         }
+
+        
     }
 }
 
 void IMR_Partition::read(const Request &request, std::ostream &output_file){
+    // TODO cache
+
     IMR_Base::read(request, output_file);
+}
+
+void IMR_Partition::write(const Request &trace, std::ostream &output_file){
+    
+    if(trace.size > options.HOT_DATA_DEF_SIZE){
+        cold_data_write(trace, output_file);
+    }
+    else{
+        hot_data_write(trace, output_file);
+    }
+    
 }
 
 void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_file){
@@ -219,8 +228,7 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
                 requests.push_back(writeRequest);
 
                 set_LBA_PBA(request.address, partitions[get_partition_position(get_track(PBA))].buffer_write_position);
-                PBA_to_LBA[partitions[get_partition_position(get_track(PBA))].buffer_write_position] = request.address;
-                partitions[get_partition_position(get_track(PBA))].buffer_PBA[partitions[get_partition_position(get_track(PBA))].buffer_write_position] = PBA;
+                partitions[get_partition_position(get_track(PBA))].buffer_PBA[partitions[get_partition_position(get_track(PBA))].buffer_write_position - get_track_head(partitions[get_partition_position(get_track(PBA))].head + partitions[get_partition_position(get_track(PBA))].hot_size)] = PBA;
                 partitions[get_partition_position(get_track(PBA))].buffer_write_position += 1;
 
             }
@@ -237,6 +245,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
     for(size_t i = 0; i < request.size; ++i){
         size_t LBA = request.address + i;
         size_t PBA = get_PBA(LBA);
+
         // TODO current partition
 
         // * write new cold data
@@ -255,6 +264,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
 
             Partition &lastPartition = partitions[partitions.size() - 1];
             if(get_track(cold_write_position) != get_track(cold_write_position + 1)){
+                
                 lastPartition.cold_used += 1;
 
                 if(!lastPartition.cold_extending){
@@ -374,6 +384,8 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
                 if(partitions[get_partition_position(get_track(PBA))].isBufferFull()){
                     write_buffer(partitions[get_partition_position(get_track(PBA))], request, output_file);
                 }
+                // std::clog << "<log> partitions[get_partition_position(get_track(PBA))].buffer_write_position: " << partitions[get_partition_position(get_track(PBA))].buffer_write_position << std::endl;
+                // std::clog << "<log> options.SECTORS_OF_BUFFER: " << options.SECTORS_OF_BUFFER << std::endl;
 
                 Request writeRequest(
                     request.timestamp,
@@ -385,8 +397,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
                 requests.push_back(writeRequest);
 
                 set_LBA_PBA(request.address, partitions[get_partition_position(get_track(PBA))].buffer_write_position);
-                PBA_to_LBA[partitions[get_partition_position(get_track(PBA))].buffer_write_position] = request.address;
-                partitions[get_partition_position(get_track(PBA))].buffer_PBA[partitions[get_partition_position(get_track(PBA))].buffer_write_position] = PBA;
+                partitions[get_partition_position(get_track(PBA))].buffer_PBA[partitions[get_partition_position(get_track(PBA))].buffer_write_position - get_track_head(partitions[get_partition_position(get_track(PBA))].head + partitions[get_partition_position(get_track(PBA))].hot_size)] = PBA;
                 partitions[get_partition_position(get_track(PBA))].buffer_write_position += 1;
 
             }

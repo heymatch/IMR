@@ -135,25 +135,23 @@ public:
 
     // * sub-functions
     
-    // inline size_t get_PBA(const size_t &LBA) { return LBA_to_PBA.count(LBA) ? LBA_to_PBA[LBA] : -1; }
-    // inline size_t get_LBA(const size_t &PBA) { return PBA_to_LBA.count(PBA) ? PBA_to_LBA[PBA] : -1; }
-    // inline void set_LBA_PBA(const size_t &LBA, const size_t &PBA) { LBA_to_PBA[LBA] = PBA; PBA_to_LBA[PBA] = LBA; }
+    inline size_t get_PBA(const size_t &LBA) { return LBA_to_PBA.count(LBA) ? LBA_to_PBA[LBA] : -1; }
+    inline size_t get_LBA(const size_t &PBA) { return PBA_to_LBA.count(PBA) ? PBA_to_LBA[PBA] : -1; }
+    inline void set_LBA_PBA(const size_t &LBA, const size_t &PBA) { LBA_to_PBA[LBA] = PBA; PBA_to_LBA[PBA] = LBA; }
     
-    inline size_t get_PBA(const size_t &LBA) { 
-        return LBA < LBA_to_PBA.size() ? LBA_to_PBA[LBA] : -1;
-    }
-    inline size_t get_LBA(const size_t &PBA) { 
-        return PBA < PBA_to_LBA.size() ? PBA_to_LBA[PBA] : -1;
-    }
-    inline void set_LBA_PBA(const size_t &LBA, const size_t &PBA){
-        if(LBA_to_PBA.size() < LBA)
-            LBA_to_PBA.resize(LBA + 100, -1);
-        if(PBA_to_LBA.size() < PBA)
-            PBA_to_LBA.resize(PBA + 100, -1);
+    // inline size_t get_PBA(const size_t &LBA) { 
+    //     return LBA < LBA_to_PBA.size() ? LBA_to_PBA[LBA] : -1;
+    // }
+    // inline size_t get_LBA(const size_t &PBA) { 
+    //     return PBA < PBA_to_LBA.size() ? PBA_to_LBA[PBA] : -1;
+    // }
+    // inline void set_LBA_PBA(const size_t &LBA, const size_t &PBA){
+    //     if(PBA_to_LBA.size() < PBA)
+    //         PBA_to_LBA.resize(PBA + 100, -1);
 
-        LBA_to_PBA[LBA] = PBA;
-        PBA_to_LBA[PBA] = LBA; 
-    }
+    //     LBA_to_PBA[LBA] = PBA;
+    //     PBA_to_LBA[PBA] = LBA; 
+    // }
     
     inline size_t get_track(const size_t &PBA){
         if (PBA == -1)
@@ -178,10 +176,10 @@ public:
     inline bool isTop(const size_t &track) { return track % 2; }
 
 private:
-    // std::unordered_map<size_t, size_t> LBA_to_PBA;
-    // std::unordered_map<size_t, size_t> PBA_to_LBA;
-    std::vector<size_t> LBA_to_PBA;
-    std::vector<size_t> PBA_to_LBA;
+    std::unordered_map<size_t, size_t> LBA_to_PBA;
+    std::unordered_map<size_t, size_t> PBA_to_LBA;
+    // std::vector<size_t> LBA_to_PBA;
+    // std::vector<size_t> PBA_to_LBA;
 };
 
 #endif

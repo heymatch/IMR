@@ -627,7 +627,7 @@ void IMR_Partition::write_buffer(Partition &current_partition, const Request &wr
 	}
 
 	current_partition.buffer_write_position = get_track_head(current_partition.head + current_partition.hot_size);
-    current_partition.buffer_PBA.resize(options.SECTORS_OF_BUFFER, -1);
+    std::fill(current_partition.buffer_PBA.begin(), current_partition.buffer_PBA.end(), -1);
 
 	//clean_access += result.size();
     write_requests_file(requests, output_file);

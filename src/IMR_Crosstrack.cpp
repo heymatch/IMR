@@ -87,7 +87,7 @@ void IMR_Crosstrack::inplace_crosstrack_write(const Request &request, std::ostre
                 
 				if (!isTop(current_write_track) && current_write_track >= options.TRACK_NUM) {
                     // * move to first TOP track
-					current_write_track = get_track_head(1);
+					write_position = get_track_head(1);
 				}
 			}
 			else

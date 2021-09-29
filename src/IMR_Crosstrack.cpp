@@ -34,8 +34,8 @@ void IMR_Crosstrack::run(std::ifstream &input_file, std::ofstream &output_file){
         Request trace = order_queue.top();
         order_queue.pop();
 
-        if(processing % 1000000 == 0)
-            std::clog << "<log> processing " << processing++ << std::endl;
+        if(processing++ % 1000000 == 0)
+            std::clog << "<log> processing " << processing << std::endl;
 
         // * read request
         if(trace.iotype == 'R' || trace.iotype == '1'){

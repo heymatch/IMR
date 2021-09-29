@@ -123,7 +123,7 @@ public:
 
     virtual void initialize(std::ifstream &) = 0;
     virtual void run(std::ifstream &, std::ofstream &) = 0;
-    virtual void evaluation() = 0;
+    virtual void evaluation(std::ofstream &) = 0;
 
     void read(const Request &request, std::ostream &output_file);
     virtual void write(const Request &, std::ostream &) = 0;
@@ -174,6 +174,9 @@ public:
 
     // * BOTTOM is even, TOP is odd
     inline bool isTop(const size_t &track) { return track % 2; }
+
+    // * For evaluation
+    inline size_t get_LBA_size() { return LBA_to_PBA.size(); }
 
 private:
     std::unordered_map<size_t, size_t> LBA_to_PBA;

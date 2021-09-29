@@ -11,7 +11,7 @@ public:
 
     void initialize(std::ifstream &);
     void run(std::ifstream &, std::ofstream &);
-    void evaluation();
+    void evaluation(std::ofstream &);
 
     void write(const Request &, std::ostream &);
 

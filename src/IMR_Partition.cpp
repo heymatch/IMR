@@ -673,6 +673,6 @@ void IMR_Partition::cache_partition(const Request &request, const size_t &partit
     write_requests_file(requests, output_file);
 }
 
-void IMR_Partition::evaluation(){
+void IMR_Partition::evaluation(std::ofstream &evaluation_file){
 
 }

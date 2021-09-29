@@ -24,18 +24,20 @@ void mode_parser(std::ifstream &setting_file){
 }
 
 int main(int argc, char **argv){
-    if(argc != 4){
-        cerr << "<error> expected 3 arguments" << endl;
+    if(argc != 5){
+        cerr << "<error> expected 4 arguments" << endl;
         cerr << "1st argument, setting file" << endl;
         cerr << "2nd argument, input file " << endl;
         cerr << "3rd argument, output file" << endl;
+        cerr << "4th argument, evaluation file" << endl;
     }
 
     ifstream setting_file(argv[1]);
     ifstream input_file(argv[2]);
     ofstream output_file(argv[3]);
+    ofstream evaluation_file(argv[4]);
 
-    if(input_file.fail() || output_file.fail()){
+    if(setting_file.fail() || input_file.fail() || output_file.fail() || evaluation_file.fail()){
         cerr << "<error> open file error" << endl;
     }
 
@@ -64,7 +66,7 @@ int main(int argc, char **argv){
 
     disk->initialize(setting_file);
     disk->run(input_file, output_file);
-    disk->evaluation();
+    disk->evaluation(evaluation_file);
 
     clog << "<log> " << argv[3] << " finished" << endl;
 

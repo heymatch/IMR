@@ -674,5 +674,11 @@ void IMR_Partition::cache_partition(const Request &request, const size_t &partit
 }
 
 void IMR_Partition::evaluation(std::ofstream &evaluation_file){
+    evaluation_file << "Total Sector Used: " << get_LBA_size() << "\n";
 
+    size_t total_track_used = 0;
+    for(size_t i = 0; i < track_written.size(); ++i){
+        if(track_written[i]) ++total_track_used;
+    }
+    evaluation_file << "Total Track Used: " << total_track_used << "\n";
 }

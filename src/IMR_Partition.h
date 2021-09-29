@@ -27,7 +27,7 @@ struct Partition{
     std::vector<size_t> buffer_PBA;
 
     bool isBufferFull(){
-        return buffer_write_position == buffer_head + options.SECTORS_OF_BUFFER;
+        return buffer_write_position >= buffer_head + options.SECTORS_OF_BUFFER;
     }
 
     bool cold_extending;

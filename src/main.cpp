@@ -39,6 +39,7 @@ int main(int argc, char **argv){
 
     if(setting_file.fail() || input_file.fail() || output_file.fail() || evaluation_file.fail()){
         cerr << "<error> open file error" << endl;
+        exit(EXIT_FAILURE);
     }
 
     clog << "<log> " << argv[3] << " start..." << endl;

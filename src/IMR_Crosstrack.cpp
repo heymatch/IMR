@@ -270,7 +270,7 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
 }
 
 void IMR_Crosstrack::evaluation(std::ofstream &evaluation_file){
-    evaluation_file << "Total LBA: " << get_LBA_size() << "\n";
+    evaluation_file << "Total Sector Used: " << get_LBA_size() << "\n";
 
     size_t total_track_used = 0;
     for(size_t i = 0; i < track_written.size(); ++i){

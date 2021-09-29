@@ -66,7 +66,7 @@ int main(int argc, char **argv){
     disk->run(input_file, output_file);
     disk->evaluation();
 
-    clog << "<log> " << argv[2] << " finished" << endl;
+    clog << "<log> " << argv[3] << " finished" << endl;
 
     return 0;
 }

@@ -135,8 +135,8 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
 
                 partitions.push_back(newPartition);
 
-                hot_write_position = get_track_head(get_track(newPartition.head));
-                cold_write_position = get_track_head(get_track(newPartition.head + newPartition.size - 2));
+                hot_write_position = get_track_head(newPartition.head);
+                cold_write_position = get_track_head(newPartition.head + newPartition.size - 2);
 
                 cache_partition(request, partitions.size() - 1, output_file);
 			}

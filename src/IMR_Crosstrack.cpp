@@ -27,36 +27,15 @@ void IMR_Crosstrack::initialize(std::ifstream &setting_file){
 }
 
 void IMR_Crosstrack::run(std::ifstream &input_file, std::ofstream &output_file){
-    std::string line;
-    // * remove header
-    std::getline(input_file, line);
-
+    read_file(input_file);
     size_t processing = 0;
 
-    while(std::getline(input_file, line)){
+    while(!order_queue.empty()){
+        Request trace = order_queue.top();
+        order_queue.pop();
+
         if(processing % 1000000 == 0)
-            std::clog << "<log> processing " << processing << std::endl;
-        processing += 1;
-
-        std::stringstream split_stream(line);
-        std::string split;
-        std::stringstream trace_stream;
-
-        while(std::getline(split_stream, split, ','))
-            trace_stream << split << " ";
-
-        Request trace;
-        for(int field = 0; field < 6; ++field){
-            if(field == 0) trace_stream >> trace.timestamp;
-            if(field == 1) trace_stream >> trace.response;
-            else if(field == 2) trace_stream >> trace.iotype;
-            else if(field == 3) trace_stream >> trace.device;
-            else if(field == 4) trace_stream >> trace.address;
-            else if(field == 5) trace_stream >> trace.size;
-        }
-        
-        trace.address /= 512;
-        trace.size /= 512;
+            std::clog << "<log> processing " << processing++ << std::endl;
 
         // * read request
         if(trace.iotype == 'R' || trace.iotype == '1'){
@@ -68,7 +47,6 @@ void IMR_Crosstrack::run(std::ifstream &input_file, std::ofstream &output_file){
             trace.iotype = 'W';
             write(trace, output_file);
         }
-
     }
 }
 

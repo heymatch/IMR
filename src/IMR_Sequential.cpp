@@ -30,10 +30,7 @@ void IMR_Sequential::initialize(std::ifstream &setting_file){
 }
 
 void IMR_Sequential::run(std::ifstream &input_file, std::ofstream &output_file){
-    std::string line;
-    
     read_file(input_file);
-
     size_t processing = 0;
 
     while(!order_queue.empty()){
@@ -41,9 +38,7 @@ void IMR_Sequential::run(std::ifstream &input_file, std::ofstream &output_file){
         order_queue.pop();
 
         if(processing % 1000000 == 0)
-            std::clog << "<log> processing " << processing << std::endl;
-            
-        processing += 1;
+            std::clog << "<log> processing " << processing++ << std::endl;
 
         // * read request
         if(trace.iotype == 'R' || trace.iotype == '1'){
@@ -55,7 +50,6 @@ void IMR_Sequential::run(std::ifstream &input_file, std::ofstream &output_file){
             trace.iotype = 'W';
             write(trace, output_file);
         }
-
     }
 }
 

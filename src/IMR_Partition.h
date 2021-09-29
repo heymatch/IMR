@@ -21,7 +21,6 @@ struct Partition{
     size_t head;
     size_t size;
     size_t hot_size;
-    size_t map_size; //?
 
     size_t buffer_head;
     size_t buffer_write_position;
@@ -31,8 +30,10 @@ struct Partition{
         return buffer_write_position == buffer_head + options.SECTORS_OF_BUFFER;
     }
 
-    size_t cold_used;
     bool cold_extending;
+
+    size_t cold_used;
+    size_t load_count;
 };
 
 class IMR_Partition : public IMR_Base{
@@ -42,9 +43,9 @@ public:
     }
 
     std::vector<Partition> partitions;
-    std::vector<int> mapping_cache;
+    std::deque<int> mapping_cache;
 
-    size_t outplace_write_position;
+    size_t latest_partition;
     size_t cold_write_position;
     size_t hot_write_position;
 
@@ -62,7 +63,7 @@ public:
     void hot_data_write(const Request &request, std::ostream &output_file);
     void cold_data_write(const Request &request, std::ostream &output_file);
     void write_buffer(Partition &current_partition, const Request &write_request, std::ostream &output_file);
-    void cache_partition();
+    void cache_partition(const Request &request, const size_t &partition_number, std::ostream &);
 
     inline size_t get_partition_position(const size_t &track){
         size_t N = 0;

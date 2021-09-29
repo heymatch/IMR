@@ -7,7 +7,7 @@ void IMR_Base::read(const Request &request, std::ostream &output_file){
 
     for (int i = 0; i < request.size; i++) {
         size_t readPBA = get_PBA(request.address + i);
-		if (readPBA == -1){
+		if(readPBA == -1){
             write(request, output_file);
             readPBA = get_PBA(request.address + i);
         }

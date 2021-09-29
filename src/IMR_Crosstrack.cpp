@@ -148,8 +148,8 @@ void IMR_Crosstrack::inplace_crosstrack_write(const Request &request, std::ostre
                 requests.push_back(writeRequest);
 
                 if(
-                    i == request.size - 1
-                    || current_update_track != get_track(write_position + 1)
+                    i == request.size - 1 ||
+                    current_update_track != get_track(get_PBA(LBA + 1))
                 ){
                     if(current_update_track >= 1 && track_written[current_update_track - 1]) {
                         Request writeBackLeftTopRequest(

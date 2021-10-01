@@ -341,8 +341,8 @@ void IMR_Sequential::outplace_sequential_write(const Request &request, std::ostr
                 track_written[current_update_track] = true;
 
                 if(
-                    i == request.size - 1
-                    || current_update_track != get_track(write_position + 1)
+                    i == request.size - 1 || 
+                    current_update_track != get_track(get_PBA(LBA + 1))
                 ){
                     Request writeBackTopRequest(
                         request.timestamp,

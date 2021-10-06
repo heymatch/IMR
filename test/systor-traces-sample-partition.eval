@@ -1,2 +1,18 @@
-Total Sector Used: 75849
-Total Track Used: 0
+Total Sector Used: 75849 / 103219550
+Total Sector Used Ratio: 0.07%
+Total Track Used: 41 / 53001
+Total Track Used Ratio: 0.08%
+Hot Write Times: 662
+Hot Update Times: 0
+Cold Write Times: 337
+Cold Update Times: 0
+Cache Check Times: 0
+Cache Load Times: 0
+Cache Write Times: 0
+Write Buffer Times: 0
+Write Buffer Access Times: 0
+Total Partitions: 1
+Average Partition Size: 500.00
+Average Partition Hot Size: 0
+Average Partition Cold Size: 0
+Average Partition Buffer Size: 0

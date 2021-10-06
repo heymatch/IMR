@@ -24,20 +24,22 @@ void mode_parser(std::ifstream &setting_file){
 }
 
 int main(int argc, char **argv){
-    if(argc != 5){
+    if(argc != 6){
         cerr << "<error> expected 4 arguments" << endl;
         cerr << "1st argument, setting file" << endl;
         cerr << "2nd argument, input file " << endl;
         cerr << "3rd argument, output file" << endl;
         cerr << "4th argument, evaluation file" << endl;
+        cerr << "4th argument, distribution file" << endl;
     }
 
     ifstream setting_file(argv[1]);
     ifstream input_file(argv[2]);
     ofstream output_file(argv[3]);
     ofstream evaluation_file(argv[4]);
+    ofstream distribution_file(argv[5]);
 
-    if(setting_file.fail() || input_file.fail() || output_file.fail() || evaluation_file.fail()){
+    if(setting_file.fail() || input_file.fail() || output_file.fail() || evaluation_file.fail() || distribution_file.fail()){
         cerr << "<error> open file error" << endl;
         exit(EXIT_FAILURE);
     }

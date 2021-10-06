@@ -7,6 +7,7 @@ namespace Evaluation{
     static size_t cache_partition_times;
     static size_t load_partition_map_times;
     static size_t write_back_partition_map_times;
+    static size_t hot_write_times;
     static size_t cold_write_times;
     static size_t cold_update_times;
     static size_t clean_buffer_times;

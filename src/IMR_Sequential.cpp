@@ -297,22 +297,23 @@ void IMR_Sequential::outplace_sequential_write(const Request &request, std::ostr
             write_position += 1;
         }
         else{
-            size_t current_update_track = get_track(PBA);
+            size_t current_update_track = get_track(write_position);
 
             if(isTop(current_update_track) || current_update_track == 0){
                 Request writeRequest(
                     request.timestamp,
                     'W',
-                    PBA,
+                    write_position,
                     1,
                     request.device
                 );
 
                 requests.push_back(writeRequest);
-                set_LBA_PBA(LBA, PBA);
+                set_LBA_PBA(LBA, write_position);
                 track_written[current_update_track] = true;
 
-                previous_update_PBA = PBA;
+                previous_update_PBA = write_position;
+                write_position += 1;
             }
             else {  //write bottom track
                 size_t previous_update_track = get_track(previous_update_PBA);
@@ -367,11 +368,19 @@ void IMR_Sequential::outplace_sequential_write(const Request &request, std::ostr
 }
 
 void IMR_Sequential::evaluation(std::ofstream &evaluation_file){
-    evaluation_file << "Total Sector Used: " << get_LBA_size() << "\n";
+    evaluation_file << std::fixed << std::setprecision(2);
+    
+    size_t total_sectors = 
+        options.SECTORS_PER_BOTTOM_TRACK * options.TOTAL_BOTTOM_TRACK + 
+        options.SECTORS_PER_TOP_TRACK * options.TOTAL_TOP_TRACK;
+    evaluation_file << "Total Sector Used: " << get_LBA_size() << " / " << total_sectors << "\n";
+    evaluation_file << "Total Sector Used Ratio: " << ((double) get_LBA_size() / (double) total_sectors) * 100.0 << "%" << "\n";
 
     size_t total_track_used = 0;
     for(size_t i = 0; i < track_written.size(); ++i){
         if(track_written[i]) ++total_track_used;
     }
-    evaluation_file << "Total Track Used: " << total_track_used << "\n";
+    size_t total_tracks = options.TOTAL_TOP_TRACK + options.TOTAL_BOTTOM_TRACK;
+    evaluation_file << "Total Track Used: " << total_track_used << " / " << total_tracks << "\n";
+    evaluation_file << "Total Track Used Ratio: " << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
 }

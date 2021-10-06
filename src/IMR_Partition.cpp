@@ -81,9 +81,11 @@ void IMR_Partition::read(const Request &request, std::ostream &output_file){
 
 void IMR_Partition::write(const Request &trace, std::ostream &output_file){
     if(trace.size > options.HOT_DATA_DEF_SIZE){
+        Evaluation::cold_write_times += 1;
         cold_data_write(trace, output_file);
     }
     else{
+        Evaluation::hot_write_times += 1;
         hot_data_write(trace, output_file);
     }
 }
@@ -110,6 +112,7 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
             );
             requests.push_back(writeRequest);
             set_LBA_PBA(LBA, hot_write_position);
+            track_written[get_track(hot_write_position)] = true;
 
             hot_write_position += 1;
 
@@ -226,6 +229,7 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
                     request.device
                 );
                 requests.push_back(writeRequest);
+                track_written[get_track(partitions[get_partition_position(get_track(PBA))].buffer_write_position)] = true;
 
                 set_LBA_PBA(request.address, partitions[get_partition_position(get_track(PBA))].buffer_write_position);
                 partitions[get_partition_position(get_track(PBA))].buffer_PBA[partitions[get_partition_position(get_track(PBA))].buffer_write_position - get_track_head(partitions[get_partition_position(get_track(PBA))].head + partitions[get_partition_position(get_track(PBA))].hot_size)] = PBA;
@@ -267,6 +271,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
             );
             requests.push_back(writeRequest);
             set_LBA_PBA(LBA, cold_write_position);
+            track_written[get_track(cold_write_position)] = true;
 
             Partition &lastPartition = partitions[partitions.size() - 1];
             if(get_track(cold_write_position) != get_track(cold_write_position + 1)){
@@ -407,6 +412,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
                     request.device
                 );
                 requests.push_back(writeRequest);
+                track_written[get_track(partitions[get_partition_position(get_track(PBA))].buffer_write_position)] = true;
 
                 set_LBA_PBA(request.address, partitions[get_partition_position(get_track(PBA))].buffer_write_position);
                 partitions[get_partition_position(get_track(PBA))].buffer_PBA[partitions[get_partition_position(get_track(PBA))].buffer_write_position - get_track_head(partitions[get_partition_position(get_track(PBA))].head + partitions[get_partition_position(get_track(PBA))].hot_size)] = PBA;
@@ -674,11 +680,45 @@ void IMR_Partition::cache_partition(const Request &request, const size_t &partit
 }
 
 void IMR_Partition::evaluation(std::ofstream &evaluation_file){
-    evaluation_file << "Total Sector Used: " << get_LBA_size() << "\n";
+    evaluation_file << std::fixed << std::setprecision(2);
+    
+    size_t total_sectors = 
+        options.SECTORS_PER_BOTTOM_TRACK * options.TOTAL_BOTTOM_TRACK + 
+        options.SECTORS_PER_TOP_TRACK * options.TOTAL_TOP_TRACK;
+    evaluation_file << "Total Sector Used: " << get_LBA_size() << " / " << total_sectors << "\n";
+    evaluation_file << "Total Sector Used Ratio: " << ((double) get_LBA_size() / (double) total_sectors) * 100.0 << "%" << "\n";
 
     size_t total_track_used = 0;
     for(size_t i = 0; i < track_written.size(); ++i){
         if(track_written[i]) ++total_track_used;
     }
-    evaluation_file << "Total Track Used: " << total_track_used << "\n";
+    size_t total_tracks = options.TOTAL_TOP_TRACK + options.TOTAL_BOTTOM_TRACK;
+    evaluation_file << "Total Track Used: " << total_track_used << " / " << total_tracks << "\n";
+    evaluation_file << "Total Track Used Ratio: " << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
+
+    evaluation_file << "Hot Write Times: " << Evaluation::hot_write_times << "\n";
+    evaluation_file << "Hot Update Times: " << 0 << "\n";
+
+    evaluation_file << "Cold Write Times: " << Evaluation::cold_write_times << "\n";
+    evaluation_file << "Cold Update Times: " << 0 << "\n";
+
+    evaluation_file << "Cache Check Times: " << 0 << "\n";
+    evaluation_file << "Cache Load Times: " << 0 << "\n";
+    evaluation_file << "Cache Write Times: " << 0 << "\n";
+
+    evaluation_file << "Write Buffer Times: " << 0 << "\n";
+    evaluation_file << "Write Buffer Access Times: " << 0 << "\n";
+
+    double avg_partition_size = 0.0;
+    size_t sum_partition_size = 0;
+    for(size_t i = 0; i < partitions.size(); ++i){
+        sum_partition_size += partitions[i].size;
+    }
+    avg_partition_size = (double) sum_partition_size / partitions.size();
+
+    evaluation_file << "Total Partitions: " << partitions.size() << "\n";
+    evaluation_file << "Average Partition Size: " << avg_partition_size << "\n";
+    evaluation_file << "Average Partition Hot Size: " << 0 << "\n";
+    evaluation_file << "Average Partition Cold Size: " << 0 << "\n";
+    evaluation_file << "Average Partition Buffer Size: " << 0 << "\n";
 }

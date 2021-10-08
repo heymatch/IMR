@@ -4,19 +4,28 @@
 #include "IMR_Base.h"
 
 namespace Evaluation{
-    static size_t cache_partition_times;
-    static size_t load_partition_map_times;
-    static size_t write_back_partition_map_times;
-    static size_t hot_write_times;
-    static size_t cold_write_times;
-    static size_t cold_update_times;
-    static size_t clean_buffer_times;
-    static size_t access_during_clean_buffer;
+    static size_t hot_write_times = 0;
+    static size_t hot_update_times = 0;
+
+    static size_t cold_write_times = 0;
+    static size_t cold_update_times = 0;
+
+    static size_t buffer_update_times = 0;
+
+    static size_t cache_check_times = 0;
+    static size_t cache_load_times = 0;
+    static size_t cache_write_times = 0;
+
+    static size_t write_buffer_times = 0;
+    static size_t write_buffer_requests = 0;
 }
 
 struct Partition{
     Partition() :
-    cold_extending(false)
+    cold_extending(false),
+    used_hot_tracks(0),
+    used_cold_tracks(0),
+    cache_load_times(0)
     {}
 
     size_t head;
@@ -33,8 +42,9 @@ struct Partition{
 
     bool cold_extending;
 
-    size_t cold_used;
-    size_t load_count;
+    size_t used_hot_tracks;
+    size_t used_cold_tracks;
+    size_t cache_load_times;
 };
 
 class IMR_Partition : public IMR_Base{

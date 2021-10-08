@@ -81,11 +81,9 @@ void IMR_Partition::read(const Request &request, std::ostream &output_file){
 
 void IMR_Partition::write(const Request &trace, std::ostream &output_file){
     if(trace.size > options.HOT_DATA_DEF_SIZE){
-        Evaluation::cold_write_times += 1;
         cold_data_write(trace, output_file);
     }
     else{
-        Evaluation::hot_write_times += 1;
         hot_data_write(trace, output_file);
     }
 }
@@ -99,6 +97,8 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
 
         // * write new hot data
         if(PBA == -1){
+            Evaluation::hot_write_times += 1;
+
             if(get_partition_position(get_track(hot_write_position)) != latest_partition){
                 cache_partition(request, get_partition_position(get_track(hot_write_position)), output_file);
             }
@@ -119,6 +119,7 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
             // * only write on BOTTOM
             if(isTop(get_track(hot_write_position))){
                 hot_write_position += options.SECTORS_PER_TOP_TRACK;
+                partitions[get_partition_position(get_track(hot_write_position))].used_hot_tracks += 1;
             }
 
             // * if full, create new partition
@@ -146,6 +147,8 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
         }
         // * hot data update
         else if(get_track(PBA) < partitions[get_partition_position(get_track(PBA))].head + partitions[get_partition_position(get_track(PBA))].hot_size){
+            Evaluation::hot_update_times += 1;
+            
             if(get_partition_position(get_track(PBA)) != latest_partition){
                 cache_partition(request, get_partition_position(get_track(PBA)), output_file);
             }
@@ -172,6 +175,8 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
         }
         // * buffer data update
         else if(get_track(PBA) < partitions[get_partition_position(get_track(PBA))].head + partitions[get_partition_position(get_track(PBA))].hot_size + options.BUFFER_SIZE){
+            Evaluation::buffer_update_times += 1;
+            
             if(get_partition_position(get_track(PBA)) != latest_partition){
                 cache_partition(request, get_partition_position(get_track(PBA)), output_file);
             }
@@ -198,6 +203,8 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
         }
         // * cold data update
         else{
+            Evaluation::cold_update_times += 1;
+
             if(get_partition_position(get_track(PBA)) != latest_partition){
                 cache_partition(request, get_partition_position(get_track(PBA)), output_file);
             }
@@ -258,6 +265,8 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
 
         // * write new cold data
         if(PBA == -1){
+            Evaluation::cold_write_times += 1;
+
             if(get_partition_position(get_track(cold_write_position)) != latest_partition){
                 cache_partition(request, get_partition_position(get_track(cold_write_position)), output_file);
             }
@@ -276,7 +285,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
             Partition &lastPartition = partitions[partitions.size() - 1];
             if(get_track(cold_write_position) != get_track(cold_write_position + 1)){
                 
-                lastPartition.cold_used += 1;
+                lastPartition.used_cold_tracks += 1;
 
                 if(!lastPartition.cold_extending){
                     if(isTop(get_track(cold_write_position))){
@@ -329,6 +338,8 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
         }
         // * hot data update
         else if(get_track(PBA) < partitions[get_partition_position(get_track(PBA))].head + partitions[get_partition_position(get_track(PBA))].hot_size){
+            Evaluation::hot_update_times += 1;
+            
             if(get_partition_position(get_track(PBA)) != latest_partition){
                 cache_partition(request, get_partition_position(get_track(PBA)), output_file);
             }
@@ -354,6 +365,8 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
         }
         // * buffer data update
         else if(get_track(PBA) < partitions[get_partition_position(get_track(PBA))].head + partitions[get_partition_position(get_track(PBA))].hot_size + options.BUFFER_SIZE){
+            Evaluation::buffer_update_times += 1;
+            
             if(get_partition_position(get_track(PBA)) != latest_partition){
                 cache_partition(request, get_partition_position(get_track(PBA)), output_file);
             }
@@ -379,6 +392,8 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
         }
         // * cold data update
         else{
+            Evaluation::cold_update_times += 1;
+
             if(get_partition_position(get_track(PBA)) != latest_partition){
                 cache_partition(request, get_partition_position(get_track(PBA)), output_file);
             }
@@ -431,6 +446,8 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
 }
 
 void IMR_Partition::write_buffer(Partition &current_partition, const Request &write_request, std::ostream &output_file){
+    Evaluation::write_buffer_times += 1;
+
     std::vector<Request> requests;
 
     for (int i = 0; i < options.SECTORS_OF_BUFFER; ) {
@@ -453,7 +470,6 @@ void IMR_Partition::write_buffer(Partition &current_partition, const Request &wr
 				}
 				previous_PBA = current_partition.buffer_PBA[i + seq_size];
 			}
-			//---------------
 
 			// * read from buffer
             {
@@ -634,13 +650,13 @@ void IMR_Partition::write_buffer(Partition &current_partition, const Request &wr
 
 	current_partition.buffer_write_position = get_track_head(current_partition.head + current_partition.hot_size);
     std::fill(current_partition.buffer_PBA.begin(), current_partition.buffer_PBA.end(), -1);
+    Evaluation::write_buffer_requests += requests.size();
 
-	//clean_access += result.size();
     write_requests_file(requests, output_file);
 }
 
 void IMR_Partition::cache_partition(const Request &request, const size_t &partition_number, std::ostream &output_file){
-    // switch_part_count++;
+    Evaluation::cache_check_times += 1;
     latest_partition = partition_number;
 	for(int i = 0; i < mapping_cache.size(); i++) {
 		if (mapping_cache[i] == partition_number) {
@@ -659,7 +675,7 @@ void IMR_Partition::cache_partition(const Request &request, const size_t &partit
             request.device
         );
         requests.push_back(writeRequest);
-        // WriteBack_map_count++;
+        Evaluation::cache_write_times += 1;
         mapping_cache.pop_front();
     }
 
@@ -673,7 +689,8 @@ void IMR_Partition::cache_partition(const Request &request, const size_t &partit
     );
     requests.push_back(writeRequest);
 
-    partitions[partition_number].load_count++;
+    Evaluation::cache_load_times += 1;
+    partitions[partition_number].cache_load_times += 1;
     mapping_cache.push_back(partition_number);
 	
     write_requests_file(requests, output_file);
@@ -697,28 +714,49 @@ void IMR_Partition::evaluation(std::ofstream &evaluation_file){
     evaluation_file << "Total Track Used Ratio: " << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
 
     evaluation_file << "Hot Write Times: " << Evaluation::hot_write_times << "\n";
-    evaluation_file << "Hot Update Times: " << 0 << "\n";
+    evaluation_file << "Hot Update Times: " << Evaluation::hot_update_times << "\n";
 
     evaluation_file << "Cold Write Times: " << Evaluation::cold_write_times << "\n";
-    evaluation_file << "Cold Update Times: " << 0 << "\n";
+    evaluation_file << "Cold Update Times: " << Evaluation::cold_update_times << "\n";
 
-    evaluation_file << "Cache Check Times: " << 0 << "\n";
-    evaluation_file << "Cache Load Times: " << 0 << "\n";
-    evaluation_file << "Cache Write Times: " << 0 << "\n";
+    evaluation_file << "Cache Check Times: " << Evaluation::cache_check_times << "\n";
+    evaluation_file << "Cache Load Times: " << Evaluation::cache_load_times << "\n";
+    evaluation_file << "Cache Write Times: " << Evaluation::cache_write_times << "\n";
 
-    evaluation_file << "Write Buffer Times: " << 0 << "\n";
-    evaluation_file << "Write Buffer Access Times: " << 0 << "\n";
+    evaluation_file << "Buffer Update Times: " << Evaluation::buffer_update_times << "\n";
+    evaluation_file << "Write Buffer Times: " << Evaluation::write_buffer_times << "\n";
+    evaluation_file << "Write Buffer Requests: " << Evaluation::write_buffer_requests << "\n";
 
     double avg_partition_size = 0.0;
     size_t sum_partition_size = 0;
+    double avg_partition_hot_size = 0.0;
+    size_t sum_partition_hot_size = 0;
+    double avg_partition_cold_size = 0.0;
+    size_t sum_partition_cold_size = 0;
+    double avg_partition_buffer_size = 0.0;
+    size_t sum_partition_buffer_size = 0;
+
     for(size_t i = 0; i < partitions.size(); ++i){
         sum_partition_size += partitions[i].size;
+        sum_partition_hot_size += partitions[i].hot_size;
     }
     avg_partition_size = (double) sum_partition_size / partitions.size();
+    avg_partition_hot_size = (double) sum_partition_hot_size / partitions.size();
 
     evaluation_file << "Total Partitions: " << partitions.size() << "\n";
     evaluation_file << "Average Partition Size: " << avg_partition_size << "\n";
-    evaluation_file << "Average Partition Hot Size: " << 0 << "\n";
+    evaluation_file << "Average Partition Hot Size: " << avg_partition_hot_size << "\n";
     evaluation_file << "Average Partition Cold Size: " << 0 << "\n";
     evaluation_file << "Average Partition Buffer Size: " << 0 << "\n";
+
+    evaluation_file << "Partitions Status:\n";
+    evaluation_file << "Partition,Cache_Load_Times,Used_Hot_Tracks,Used_Cold_Tracks\n";
+    for(size_t i = 0; i < partitions.size(); ++i){
+        evaluation_file << 
+            i << "," <<
+            partitions[i].cache_load_times << "," <<
+            partitions[i].used_hot_tracks << "," <<
+            partitions[i].used_cold_tracks
+            << "\n";
+    }
 }

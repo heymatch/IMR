@@ -177,7 +177,7 @@ public:
     inline bool isTop(const size_t &track) { return track % 2; }
 
     // * For evaluation
-    inline size_t get_LBA_size() { return LBA_to_PBA.size(); }
+    inline size_t get_LBA_size() { return std::max(LBA_to_PBA.size(), PBA_to_LBA.size()); }
 
 private:
     std::unordered_map<size_t, size_t> LBA_to_PBA;

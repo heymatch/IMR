@@ -68,7 +68,15 @@ int main(int argc, char **argv){
     }
 
     disk->initialize(setting_file);
-    disk->run(input_file, output_file);
+    try{
+        disk->run(input_file, output_file);
+    }
+    catch(const char *e){
+        cerr << e << endl;
+    }
+    catch(std::exception &e){
+        cerr << e.what() << endl;
+    }
     disk->evaluation(evaluation_file);
 
     clog << "<log> " << argv[3] << " finished" << endl;

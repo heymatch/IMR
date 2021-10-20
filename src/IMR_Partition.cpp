@@ -35,8 +35,9 @@ void IMR_Partition::run(std::ifstream &input_file, std::ofstream &output_file){
         Request trace = order_queue.top();
         order_queue.pop();
 
-        if(processing++ % 1000000 == 0)
+        if(processing++ % 1000000 == 0){
             std::clog << "<log> processing " << processing << std::endl;
+        }
 
         // * read request
         if(trace.iotype == 'R' || trace.iotype == '1'){
@@ -112,7 +113,7 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
             );
             requests.push_back(writeRequest);
             set_LBA_PBA(LBA, hot_write_position);
-            track_written[get_track(hot_write_position)] = true;
+            track_written.at(get_track(hot_write_position)) = true;
 
             hot_write_position += 1;
 
@@ -280,7 +281,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
             );
             requests.push_back(writeRequest);
             set_LBA_PBA(LBA, cold_write_position);
-            track_written[get_track(cold_write_position)] = true;
+            track_written.at(get_track(cold_write_position)) = true;
 
             Partition &lastPartition = partitions[partitions.size() - 1];
             if(get_track(cold_write_position) != get_track(cold_write_position + 1)){

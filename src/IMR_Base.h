@@ -84,7 +84,7 @@ struct Request{
     iotype(iotype),
     address(address),
     size(size),
-    device(device)
+    device(0)
     {}
 
     bool operator<(const Request &right) const{
@@ -109,9 +109,12 @@ static std::ostream& operator<<(std::ostream &out, const Request &right){
     << right.size << "\t";
 
     if(right.iotype == 'W')
-        out << '0' << "\n";
+        out << '0';
     else if(right.iotype == 'R')
-        out << '1' << "\n";
+        out << '1';
+
+    // out << std::endl;
+    out << '\n';
     
     return out;
 }
@@ -155,9 +158,8 @@ public:
     // }
     
     inline size_t get_track(const size_t &PBA){
-        if (PBA == -1)
-		return -1;
-	
+        if (PBA == -1) return -1;
+
         size_t n = PBA / (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK);
         if (PBA - n * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK) > options.SECTORS_PER_BOTTOM_TRACK)
             return (2 * n + 1);
@@ -165,6 +167,7 @@ public:
             return 2 * n;
         else
             return (2 * n - 1);
+            
     }
     inline size_t get_track_head(const size_t &track){
         return 

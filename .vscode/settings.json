@@ -87,6 +87,9 @@
         "bit": "cpp",
         "any": "cpp",
         "charconv": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "queue": "cpp",
+        "xlocmon": "cpp",
+        "xloctime": "cpp"
     }
 }

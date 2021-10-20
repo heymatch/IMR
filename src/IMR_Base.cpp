@@ -5,11 +5,36 @@ std::priority_queue<Request> order_queue;
 void IMR_Base::read(const Request &request, std::ostream &output_file){
     std::vector<Request> requests;
 
+    Request write_request(
+        request.timestamp,
+        'W',
+        request.address,
+        0,
+        request.device
+    );
+    for (int i = 0; i < request.size; i++) {
+        size_t readPBA = get_PBA(request.address + i);
+		if(readPBA == -1 && write_request.size == 0){
+            write_request.size += 1;
+            write_request.address = request.address + i;
+        }
+        else if(readPBA == -1){
+            write_request.size += 1;
+        }
+        else if(write_request.size != 0){
+            write(write_request, output_file);
+            write_request.size = 0;
+        }
+	}
+
+    if(write_request.size != 0){
+        write(write_request, output_file);
+    }
+
     for (int i = 0; i < request.size; i++) {
         size_t readPBA = get_PBA(request.address + i);
 		if(readPBA == -1){
-            write(request, output_file);
-            readPBA = get_PBA(request.address + i);
+            throw "<error> read at not written";
         }
 
         requests.push_back(
@@ -65,26 +90,35 @@ void IMR_Base::write_requests_file(const std::vector<Request> &requests, std::os
 }
 
 void IMR_Base::read_file(std::istream &input_file){
+    size_t line_counter = 1;
     std::string line;
     // * remove header
     std::getline(input_file, line);
 
     while(std::getline(input_file, line)){
+        line_counter += 1;
         std::stringstream split_stream(line);
         std::string split;
         std::stringstream trace_stream;
 
-        while(std::getline(split_stream, split, ','))
-            trace_stream << split << " ";
-
         Request trace;
-        for(int field = 0; field < 6; ++field){
+        for(int field = 0; std::getline(split_stream, split, ','); ++field){
+            trace_stream.clear();
+            trace_stream << split;
+
             if(field == 0) trace_stream >> trace.timestamp;
             else if(field == 1) trace_stream >> trace.response;
             else if(field == 2) trace_stream >> trace.iotype;
             else if(field == 3) trace_stream >> trace.device;
             else if(field == 4) trace_stream >> trace.address;
             else if(field == 5) trace_stream >> trace.size;
+        }
+
+        // std::clog << std::fixed << trace;
+
+        if(!trace_stream.eof()){
+            std::cerr << "<error> trace fail at " << line_counter << std::endl;
+            exit(EXIT_FAILURE);
         }
         
         trace.timestamp *= 1000.0;

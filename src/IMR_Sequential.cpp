@@ -1,5 +1,6 @@
 #include "IMR_Sequential.h"
 
+extern std::priority_queue<Request> order_queue;
 
 void IMR_Sequential::initialize(std::ifstream &setting_file){
     // * init options
@@ -37,8 +38,9 @@ void IMR_Sequential::run(std::ifstream &input_file, std::ofstream &output_file){
         Request trace = order_queue.top();
         order_queue.pop();
 
-        if(processing++ % 1000000 == 0)
+        if(processing++ % 1000000 == 0){
             std::clog << "<log> processing " << processing << std::endl;
+        }
 
         // * read request
         if(trace.iotype == 'R' || trace.iotype == '1'){
@@ -303,17 +305,15 @@ void IMR_Sequential::outplace_sequential_write(const Request &request, std::ostr
                 Request writeRequest(
                     request.timestamp,
                     'W',
-                    write_position,
+                    PBA,
                     1,
                     request.device
                 );
 
                 requests.push_back(writeRequest);
-                set_LBA_PBA(LBA, write_position);
-                track_written[current_update_track] = true;
+                set_LBA_PBA(LBA, PBA);
 
-                previous_update_PBA = write_position;
-                write_position += 1;
+                previous_update_PBA = PBA;
             }
             else {  //write bottom track
                 size_t previous_update_track = get_track(previous_update_PBA);

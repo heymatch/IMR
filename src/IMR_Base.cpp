@@ -2,6 +2,45 @@
 
 std::priority_queue<Request> order_queue;
 
+void IMR_Base::initialize(std::ifstream &setting_file){
+    // * init options
+    std::string line;
+    while(std::getline(setting_file, line)){
+        std::stringstream line_split(line);
+        std::string parameter, value;
+        std::getline(line_split, parameter, '=');
+        std::getline(line_split, value);
+
+        if(parameter == "UPDATE_METHOD"){
+            if(value == "IN_PLACE"){
+                options.UPDATE_METHOD = Update_Method::IN_PLACE;
+            }
+            else if(value == "OUT_PLACE"){
+                options.UPDATE_METHOD = Update_Method::OUT_PLACE;
+            }
+        }
+    }
+}
+
+void IMR_Base::evaluation(std::ofstream &evaluation_file){
+    evaluation_file << std::fixed << std::setprecision(2);
+    
+    size_t total_sectors = 
+        options.SECTORS_PER_BOTTOM_TRACK * options.TOTAL_BOTTOM_TRACK + 
+        options.SECTORS_PER_TOP_TRACK * options.TOTAL_TOP_TRACK;
+    evaluation_file << "Total Sector Used: " << get_LBA_size() << " / " << total_sectors << "\n";
+    evaluation_file << "Total Sector Used Ratio: " << ((double) get_LBA_size() / (double) total_sectors) * 100.0 << "%" << "\n";
+
+    size_t total_track_used = 0;
+    for(size_t i = 0; i < track_written.size(); ++i){
+        if(track_written[i]) ++total_track_used;
+    }
+    size_t total_tracks = options.TOTAL_TOP_TRACK + options.TOTAL_BOTTOM_TRACK;
+    evaluation_file << "Total Track Used: " << total_track_used << " / " << total_tracks << "\n";
+    evaluation_file << "Total Track Used Ratio: " << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
+
+}
+
 void IMR_Base::read(const Request &request, std::ostream &output_file){
     std::vector<Request> requests;
 

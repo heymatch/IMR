@@ -1,7 +1,9 @@
-Total Sector Used: 76089 / 103219550
-Total Sector Used Ratio: 0.07%
-Total Track Used: 41 / 53001
-Total Track Used Ratio: 0.08%
+Total Sector Used: 76089 / 29214550
+Total Sector Used Ratio: 0.26%
+Total Track Used: 41 / 15001
+Total Track Used Ratio: 0.27%
+Last Hot Write Position: 19601
+Last Cold Write Position: 906606
 Hot Write Times: 10375
 Hot Update Times: 82
 Cold Write Times: 65474
@@ -17,6 +19,7 @@ Average Partition Size: 500.00
 Average Partition Hot Size: 188.00
 Average Partition Cold Size: 0
 Average Partition Buffer Size: 0
+Sum Partition Size: 500
 Partitions Status:
 Partition,Cache_Load_Times,Used_Hot_Tracks,Used_Cold_Tracks
 0,0,5,33

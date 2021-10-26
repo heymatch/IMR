@@ -348,7 +348,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
             try{
                 size_t track = get_track(PBA);
                 if(isTop(track)){
-                    throw "hot data update at TOP track";
+                    throw "<exception> hot data update at TOP track";
                 }
 
                 Request writeRequest(
@@ -361,7 +361,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
                 requests.push_back(writeRequest);
             }
             catch(const char *e){
-                std::cerr << "<exception>" << e << std::endl;
+                std::cerr << e << std::endl;
             }
         }
         // * buffer data update
@@ -698,21 +698,11 @@ void IMR_Partition::cache_partition(const Request &request, const size_t &partit
 }
 
 void IMR_Partition::evaluation(std::ofstream &evaluation_file){
-    evaluation_file << std::fixed << std::setprecision(2);
-    
-    size_t total_sectors = 
-        options.SECTORS_PER_BOTTOM_TRACK * options.TOTAL_BOTTOM_TRACK + 
-        options.SECTORS_PER_TOP_TRACK * options.TOTAL_TOP_TRACK;
-    evaluation_file << "Total Sector Used: " << get_LBA_size() << " / " << total_sectors << "\n";
-    evaluation_file << "Total Sector Used Ratio: " << ((double) get_LBA_size() / (double) total_sectors) * 100.0 << "%" << "\n";
+    IMR_Base::evaluation(evaluation_file);
 
-    size_t total_track_used = 0;
-    for(size_t i = 0; i < track_written.size(); ++i){
-        if(track_written[i]) ++total_track_used;
-    }
-    size_t total_tracks = options.TOTAL_TOP_TRACK + options.TOTAL_BOTTOM_TRACK;
-    evaluation_file << "Total Track Used: " << total_track_used << " / " << total_tracks << "\n";
-    evaluation_file << "Total Track Used Ratio: " << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
+    evaluation_file << "Last Hot Write Position: " << hot_write_position << "\n";
+    evaluation_file << "Last Cold Write Position: " << cold_write_position << "\n";
+    
 
     evaluation_file << "Hot Write Times: " << Evaluation::hot_write_times << "\n";
     evaluation_file << "Hot Update Times: " << Evaluation::hot_update_times << "\n";
@@ -749,6 +739,7 @@ void IMR_Partition::evaluation(std::ofstream &evaluation_file){
     evaluation_file << "Average Partition Hot Size: " << avg_partition_hot_size << "\n";
     evaluation_file << "Average Partition Cold Size: " << 0 << "\n";
     evaluation_file << "Average Partition Buffer Size: " << 0 << "\n";
+    evaluation_file << "Sum Partition Size: " << sum_partition_size << "\n";
 
     evaluation_file << "Partitions Status:\n";
     evaluation_file << "Partition,Cache_Load_Times,Used_Hot_Tracks,Used_Cold_Tracks\n";

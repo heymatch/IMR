@@ -17,12 +17,10 @@ enum Update_Method{
 
 struct Options{
     Options(
-        size_t lba_total = 103219550,
-        size_t track_num = 53001,
         size_t sectors_per_bottom_track = 2050,
         size_t sectors_per_top_track = 1845,
-        size_t total_bottom_track = 26501,
-        size_t total_top_track = 26500,
+        size_t total_bottom_track = 7501,
+        size_t total_top_track = 7500,
 
         Update_Method update_method = Update_Method::IN_PLACE,
 
@@ -33,8 +31,7 @@ struct Options{
         size_t mapping_cache_size = 10,
         size_t segment_size = 41
     ) : 
-    LBA_TOTAL(lba_total),
-    TRACK_NUM(track_num),
+    TRACK_NUM(total_top_track + total_bottom_track),
     SECTORS_PER_BOTTOM_TRACK(sectors_per_bottom_track),
     SECTORS_PER_TOP_TRACK(sectors_per_top_track),
     TOTAL_BOTTOM_TRACK(total_bottom_track),
@@ -52,7 +49,6 @@ struct Options{
     SECTORS_OF_BUFFER((BUFFER_SIZE - BUFFER_SIZE / 2) * SECTORS_PER_BOTTOM_TRACK + (BUFFER_SIZE / 2 * SECTORS_PER_TOP_TRACK))
     {}
 
-    const size_t LBA_TOTAL;
     const size_t TRACK_NUM;
     const size_t SECTORS_PER_BOTTOM_TRACK;
     const size_t SECTORS_PER_TOP_TRACK;
@@ -125,9 +121,9 @@ public:
 
     // * main common functions
 
-    virtual void initialize(std::ifstream &) = 0;
+    virtual void initialize(std::ifstream &);
     virtual void run(std::ifstream &, std::ofstream &) = 0;
-    virtual void evaluation(std::ofstream &) = 0;
+    virtual void evaluation(std::ofstream &);
 
     void read(const Request &request, std::ostream &output_file);
     virtual void write(const Request &, std::ostream &) = 0;

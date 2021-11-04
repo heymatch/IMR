@@ -18,12 +18,32 @@ void IMR_Base::initialize(std::ifstream &setting_file){
             else if(value == "OUT_PLACE"){
                 options.UPDATE_METHOD = Update_Method::OUT_PLACE;
             }
+            else{
+                throw "<error> wrong UPDATE_METHOD";
+            }
+            
+        }
+        else if(parameter == "TOTAL_BOTTOM_TRACK"){
+            options.TOTAL_BOTTOM_TRACK = std::stoull(value);
+        }
+        else if(parameter == "TOTAL_TOP_TRACK"){
+            options.TOTAL_TOP_TRACK = std::stoull(value);
         }
     }
+
+    options.TRACK_NUM = options.TOTAL_BOTTOM_TRACK + options.TOTAL_TOP_TRACK;
 }
 
 void IMR_Base::evaluation(std::ofstream &evaluation_file){
     evaluation_file << std::fixed << std::setprecision(2);
+
+    evaluation_file << "Options" << "\n";
+    evaluation_file << "options.UPDATE_METHOD: " << options.UPDATE_METHOD << "\n";
+    evaluation_file << "options.TOTAL_BOTTOM_TRACK: " << options.TOTAL_BOTTOM_TRACK << "\n";
+    evaluation_file << "options.TOTAL_TOP_TRACK: " << options.TOTAL_TOP_TRACK << "\n";
+    evaluation_file << "options.TRACK_NUM : " << options.TRACK_NUM << "\n";
+
+    evaluation_file << "==========" << "\n";
     
     size_t total_sectors = 
         options.SECTORS_PER_BOTTOM_TRACK * options.TOTAL_BOTTOM_TRACK + 
@@ -141,24 +161,32 @@ void IMR_Base::read_file(std::istream &input_file){
         std::stringstream trace_stream;
 
         Request trace;
+        std::vector<std::string> fields;
         for(int field = 0; std::getline(split_stream, split, ','); ++field){
-            trace_stream.clear();
-            trace_stream << split;
+            fields.push_back(split);
+        }
 
-            if(field == 0) trace_stream >> trace.timestamp;
-            else if(field == 1) trace_stream >> trace.response;
-            else if(field == 2) trace_stream >> trace.iotype;
-            else if(field == 3) trace_stream >> trace.device;
-            else if(field == 4) trace_stream >> trace.address;
-            else if(field == 5) trace_stream >> trace.size;
+        if(options.TRACE_TYPE == Trace_Type::SYSTOR17){
+            trace.timestamp = std::stod(fields[0]);
+            trace.iotype = fields[2][0];
+            trace.device = 0;
+            trace.address = std::stoull(fields[4]);
+            trace.size = std::stoull(fields[5]);
+        }
+        else if(options.TRACE_TYPE == Trace_Type::MSR){
+            trace.timestamp = (double) (std::stoull(fields[0]) / 10000000 - 11644473600LL);
+            trace.iotype = fields[3][0];
+            trace.device = 0;
+            trace.address = std::stoull(fields[4]);
+            trace.size = std::stoull(fields[5]);
         }
 
         // std::clog << std::fixed << trace;
 
-        if(!trace_stream.eof()){
-            std::cerr << "<error> trace fail at " << line_counter << std::endl;
-            exit(EXIT_FAILURE);
-        }
+        // if(!trace_stream.eof()){
+        //     std::cerr << "<error> trace fail at " << line_counter << std::endl;
+        //     exit(EXIT_FAILURE);
+        // }
         
         trace.timestamp *= 1000.0;
         trace.address /= 512;

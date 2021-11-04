@@ -1,7 +1,5 @@
 #include "IMR_Sequential.h"
 
-extern std::priority_queue<Request> order_queue;
-
 void IMR_Sequential::initialize(std::ifstream &setting_file){
     IMR_Base::initialize(setting_file);
 

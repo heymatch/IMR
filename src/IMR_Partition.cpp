@@ -2,6 +2,7 @@
 
 void IMR_Partition::initialize(std::ifstream &setting_file){
     // * init options
+    IMR_Base::initialize(setting_file);
 
     // * init 
     // LBA_to_PBA.resize(options.LBA_TOTAL + 1, -1);
@@ -225,7 +226,7 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
             // * if BOTTOM, out-place update to buffer
             else{
                 // * if buffer full, write buffer back to original tracks 
-                if(partitions[get_partition_position(get_track(PBA))].isBufferFull()){
+                if(partitions[get_partition_position(get_track(PBA))].isBufferFull(options)){
                     write_buffer(partitions[get_partition_position(get_track(PBA))], request, output_file);
                 }
 
@@ -414,7 +415,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
             // * if BOTTOM, out-place update to buffer
             else{
                 // * if buffer full, write buffer back to original tracks 
-                if(partitions[get_partition_position(get_track(PBA))].isBufferFull()){
+                if(partitions[get_partition_position(get_track(PBA))].isBufferFull(options)){
                     write_buffer(partitions[get_partition_position(get_track(PBA))], request, output_file);
                 }
                 // std::clog << "<log> partitions[get_partition_position(get_track(PBA))].buffer_write_position: " << partitions[get_partition_position(get_track(PBA))].buffer_write_position << std::endl;

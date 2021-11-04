@@ -15,12 +15,17 @@ enum Update_Method{
     OUT_PLACE
 };
 
+enum Trace_Type{
+    SYSTOR17,
+    MSR
+};
+
 struct Options{
     Options(
         size_t sectors_per_bottom_track = 2050,
         size_t sectors_per_top_track = 1845,
-        size_t total_bottom_track = 7501,
-        size_t total_top_track = 7500,
+        size_t total_bottom_track = 106501,
+        size_t total_top_track = 106500,
 
         Update_Method update_method = Update_Method::IN_PLACE,
 
@@ -49,11 +54,11 @@ struct Options{
     SECTORS_OF_BUFFER((BUFFER_SIZE - BUFFER_SIZE / 2) * SECTORS_PER_BOTTOM_TRACK + (BUFFER_SIZE / 2 * SECTORS_PER_TOP_TRACK))
     {}
 
-    const size_t TRACK_NUM;
+    size_t TRACK_NUM;
     const size_t SECTORS_PER_BOTTOM_TRACK;
     const size_t SECTORS_PER_TOP_TRACK;
-    const size_t TOTAL_BOTTOM_TRACK;
-    const size_t TOTAL_TOP_TRACK;
+    size_t TOTAL_BOTTOM_TRACK;
+    size_t TOTAL_TOP_TRACK;
 
     const size_t HOT_DATA_DEF_SIZE;
     const size_t PARTITION_SIZE;
@@ -64,9 +69,8 @@ struct Options{
     const size_t SECTORS_OF_BUFFER;
 
     Update_Method UPDATE_METHOD;
+    Trace_Type TRACE_TYPE;
 };
-
-static Options options;
 
 struct Request{
     Request(
@@ -117,6 +121,7 @@ static std::ostream& operator<<(std::ostream &out, const Request &right){
 
 class IMR_Base{
 public:
+    Options options;
     std::vector<bool> track_written;
 
     // * main common functions
@@ -157,14 +162,14 @@ public:
         if (PBA == -1) return -1;
 
         size_t n = PBA / (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK);
-        if (PBA - n * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK) > options.SECTORS_PER_BOTTOM_TRACK)
-            return (2 * n + 1);
-        else if (PBA - n * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK) > 0)
-            return 2 * n;
+        size_t r = PBA % (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK);
+
+        if (r > options.SECTORS_PER_BOTTOM_TRACK)
+            return 2 * n + 1;
         else
-            return (2 * n - 1);
-            
+            return 2 * n;
     }
+
     inline size_t get_track_head(const size_t &track){
         return 
             track % 2 ? 

@@ -36,7 +36,7 @@ struct Partition{
     size_t buffer_write_position;
     std::vector<size_t> buffer_PBA;
 
-    bool isBufferFull(){
+    bool isBufferFull(const Options &options){
         return buffer_write_position >= buffer_head + options.SECTORS_OF_BUFFER;
     }
 

@@ -2,22 +2,7 @@
 
 void IMR_Crosstrack::initialize(std::ifstream &setting_file){
     // * init options
-    std::string line;
-    while(std::getline(setting_file, line)){
-        std::stringstream line_split(line);
-        std::string parameter, value;
-        std::getline(line_split, parameter, '=');
-        std::getline(line_split, value);
-
-        if(parameter == "UPDATE_METHOD"){
-            if(value == "IN_PLACE"){
-                options.UPDATE_METHOD = Update_Method::IN_PLACE;
-            }
-            else if(value == "OUT_PLACE"){
-                options.UPDATE_METHOD = Update_Method::OUT_PLACE;
-            }
-        }
-    }
+    IMR_Base::initialize(setting_file);
 
     // * init 
 	track_written.resize(options.TRACK_NUM, false);
@@ -56,6 +41,7 @@ void IMR_Crosstrack::write(const Request &trace, std::ostream &output_file){
         inplace_crosstrack_write(trace, output_file);
     }
     else if(options.UPDATE_METHOD == Update_Method::OUT_PLACE){
+        // std::clog << options.UPDATE_METHOD << std::endl;
         outplace_crosstrack_write(trace, output_file);
     }
 }
@@ -84,7 +70,8 @@ void IMR_Crosstrack::inplace_crosstrack_write(const Request &request, std::ostre
             track_written[current_write_track] = true;
             
             if (current_write_track != get_track(write_position + 1)) {
-				write_position = get_track_head((current_write_track) + 2);
+				current_write_track += 2;
+				write_position = get_track_head(current_write_track);
                 
 				if (!isTop(current_write_track) && current_write_track >= options.TRACK_NUM) {
                     // * move to first TOP track
@@ -97,7 +84,14 @@ void IMR_Crosstrack::inplace_crosstrack_write(const Request &request, std::ostre
         else{
             size_t current_update_track = get_track(PBA);
 
-            if (isTop(current_update_track)) {
+            if(
+                isTop(current_update_track) 
+            ){
+                if(isTop(current_update_track) )
+                    Evaluation::direct_update_top_count += 1;
+                else 
+                    Evaluation::direct_update_bottom_count += 1;
+
                 Request writeRequest(
                     request.timestamp,
                     'W',
@@ -109,6 +103,8 @@ void IMR_Crosstrack::inplace_crosstrack_write(const Request &request, std::ostre
                 requests.push_back(writeRequest);
             }
             else {
+                Evaluation::inplace_update_count += 1;
+
                 size_t previous_update_track = get_track(previous_PBA);
 
                 if(current_update_track != previous_update_track){
@@ -194,6 +190,7 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
 
         if(PBA == -1){
             size_t current_write_track = get_track(write_position);
+
             Request writeRequest(
                 request.timestamp,
                 'W',
@@ -207,7 +204,8 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
             track_written[current_write_track] = true;
             
             if (current_write_track != get_track(write_position + 1)) {
-				write_position = get_track_head((current_write_track) + 2);
+                current_write_track += 2;
+				write_position = get_track_head(current_write_track);
                 
 				if (!isTop(current_write_track) && current_write_track >= options.TRACK_NUM) {
                     // * move to first TOP track
@@ -226,6 +224,11 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
                 || (current_update_track == 0 && !track_written[current_update_track + 1])
                 || (!track_written[current_update_track - 1] && !track_written[current_update_track + 1])
             ){
+                if(isTop(current_update_track) )
+                    Evaluation::direct_update_top_count += 1;
+                else 
+                    Evaluation::direct_update_bottom_count += 1;
+
                 Request writeRequest(
                     request.timestamp,
                     'W',
@@ -239,6 +242,8 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
                 track_written[current_update_track] = true;
             }
             else{
+                Evaluation::outplace_update_count += 1;
+
                 size_t current_write_track = get_track(write_position);
                 Request writeRequest(
                     request.timestamp,
@@ -253,7 +258,8 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
                 track_written[current_write_track] = true;
                 
                 if (current_write_track != get_track(write_position + 1)) {
-                    write_position = get_track_head((current_write_track) + 2);
+                    current_write_track += 2;
+                    write_position = get_track_head(current_write_track);
                     
                     if (!isTop(current_write_track) && current_write_track >= options.TRACK_NUM) {
                         // * move to first TOP track
@@ -274,4 +280,8 @@ void IMR_Crosstrack::evaluation(std::ofstream &evaluation_file){
     IMR_Base::evaluation(evaluation_file);
 
     evaluation_file << "Last Write Position: " << write_position << "\n";
+    evaluation_file << "Direct Update Bottom Count: " << Evaluation::direct_update_bottom_count << "\n";
+    evaluation_file << "Direct Update Top Count: " << Evaluation::direct_update_top_count << "\n";
+    evaluation_file << "Inplace Update Count: " << Evaluation::inplace_update_count << "\n";
+    evaluation_file << "Outplace Update Count: " << Evaluation::outplace_update_count << "\n";
 }

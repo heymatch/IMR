@@ -1,5 +1,11 @@
-Total Sector Used: 75849 / 29214550
-Total Sector Used Ratio: 0.26%
-Total Track Used: 39 / 15001
-Total Track Used Ratio: 0.26%
-Last Write Position: 75850
+Options
+options.UPDATE_METHOD: 1
+options.TOTAL_BOTTOM_TRACK: 501
+options.TOTAL_TOP_TRACK: 500
+options.TRACK_NUM : 1001
+==========
+Total Sector Used: 75898 / 1949550
+Total Sector Used Ratio: 3.89%
+Total Track Used: 39 / 1001
+Total Track Used Ratio: 3.90%
+Last Write Position: 75899

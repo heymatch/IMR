@@ -6,5 +6,5 @@ MODES=("sequential-inplace" "sequential-outplace" "crosstrack-inplace" "crosstra
 TRACE=systor-traces-sample
 
 for mode in ${MODES[*]}; do 
-    ./IMR setting/$mode.txt test/$TRACE.csv test/$TRACE-$mode.trace test/$TRACE-$mode.eval test/$TRACE-$mode.dist
+    ./IMR $mode systor17 setting/sample.txt test/$TRACE.csv test/$TRACE-$mode.trace test/$TRACE-$mode.eval test/$TRACE-$mode.dist
 done

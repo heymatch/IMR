@@ -5,61 +5,60 @@ using namespace std;
 #include "IMR_Sequential.h"
 #include "IMR_Crosstrack.h"
 
-static std::string MODE;
-
-void mode_parser(std::ifstream &setting_file){
-    std::string line;
-    std::getline(setting_file, line);
-
-    std::stringstream line_split(line);
-    std::string parameter, value;
-    std::getline(line_split, parameter, '=');
-    std::getline(line_split, value);
-
-    if(parameter != "MODE"){
-        std::cerr << "<error> wrong MODE parameter" << std::endl;
+int main(int argc, char **argv){
+    if(argc != 8){
+        cerr << "<error> you enter " << argc-1 << " arguments" << endl;
+        for(int i = 1; i < argc; ++i){
+            cerr << "<error> your " << i << " argument: " << argv[i] << endl;
+        }
+        cerr << "expected 7 arguments" << endl;
+        cerr << "1 argument, mode" << endl;
+        cerr << "2 argument, trace type" << endl;
+        cerr << "3 argument, setting file" << endl;
+        cerr << "4 argument, input file " << endl;
+        cerr << "5 argument, output file" << endl;
+        cerr << "6 argument, evaluation file" << endl;
+        cerr << "7 argument, distribution file" << endl;
         exit(EXIT_FAILURE);
     }
-    MODE = value;
-}
 
-int main(int argc, char **argv){
-    if(argc != 6){
-        cerr << "<error> expected 4 arguments" << endl;
-        cerr << "1st argument, setting file" << endl;
-        cerr << "2nd argument, input file " << endl;
-        cerr << "3rd argument, output file" << endl;
-        cerr << "4th argument, evaluation file" << endl;
-        cerr << "4th argument, distribution file" << endl;
-    }
-
-    ifstream setting_file(argv[1]);
-    ifstream input_file(argv[2]);
-    ofstream output_file(argv[3]);
-    ofstream evaluation_file(argv[4]);
-    ofstream distribution_file(argv[5]);
+    std::string MODE = argv[1];
+    std::string TRACE_TYPE = argv[2];
+    ifstream setting_file(argv[3]);
+    ifstream input_file(argv[4]);
+    ofstream output_file(argv[5]);
+    ofstream evaluation_file(argv[6]);
+    ofstream distribution_file(argv[7]);
 
     if(setting_file.fail() || input_file.fail() || output_file.fail() || evaluation_file.fail() || distribution_file.fail()){
         cerr << "<error> open file error" << endl;
         exit(EXIT_FAILURE);
     }
 
-    clog << "<log> " << argv[3] << " start..." << endl;
+    clog << "<log> " << argv[5] << " start..." << endl;
 
     output_file << fixed;
-
-    mode_parser(setting_file);
     IMR_Base *disk = nullptr;
 
     // * redirect to differnt mode
-    if(MODE == "PARTITION"){
+    if(MODE == "partition"){
         disk = new IMR_Partition;
     }
-    else if(MODE == "SEQUENTIAL"){
+    else if(MODE == "sequential-inplace"){
         disk = new IMR_Sequential;
+        disk->options.UPDATE_METHOD = Update_Method::IN_PLACE;
     }
-    else if(MODE == "CROSSTRACK"){
+    else if(MODE == "sequential-outplace"){
+        disk = new IMR_Sequential;
+        disk->options.UPDATE_METHOD = Update_Method::OUT_PLACE;
+    }
+    else if(MODE == "crosstrack-inplace"){
         disk = new IMR_Crosstrack;
+        disk->options.UPDATE_METHOD = Update_Method::IN_PLACE;
+    }
+    else if(MODE == "crosstrack-outplace"){
+        disk = new IMR_Crosstrack;
+        disk->options.UPDATE_METHOD = Update_Method::OUT_PLACE;
     }
     else{
         cerr << "<error> " << MODE << endl;
@@ -67,6 +66,18 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
+    if(TRACE_TYPE == "systor17"){
+        disk->options.TRACE_TYPE = Trace_Type::SYSTOR17;
+    }
+    else if(TRACE_TYPE == "msr"){
+        disk->options.TRACE_TYPE = Trace_Type::MSR;
+    }
+    else{
+        cerr << "<error> " << TRACE_TYPE << endl;
+        cerr << "<error> wrong TRACE_TYPE argument" << endl;
+        exit(EXIT_FAILURE);
+    }
+    
     disk->initialize(setting_file);
     try{
         disk->run(input_file, output_file);
@@ -76,6 +87,7 @@ int main(int argc, char **argv){
     }
     catch(std::exception &e){
         cerr << e.what() << endl;
+        clog << "<log> " << "force to evaluation" << endl;
     }
     disk->evaluation(evaluation_file);
 

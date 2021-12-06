@@ -3,13 +3,6 @@
 
 #include "IMR_Base.h"
 
-namespace Evaluation{
-    static size_t inplace_update_count = 0;
-    static size_t outplace_update_count = 0;
-    static size_t direct_update_bottom_count = 0;
-    static size_t direct_update_top_count = 0;
-}
-
 class IMR_Crosstrack : public IMR_Base{
 public:
     size_t write_position;

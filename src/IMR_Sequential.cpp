@@ -50,6 +50,8 @@ void IMR_Sequential::inplace_sequential_write(const Request &request, std::ostre
     size_t previous_write_PBA = -1;
     size_t previous_update_PBA = -1;
 
+    size_t update_length = 0;
+
     for(size_t i = 0; i < request.size; ++i){
         size_t LBA = request.address + i;
         size_t PBA = get_PBA(LBA);
@@ -116,7 +118,8 @@ void IMR_Sequential::inplace_sequential_write(const Request &request, std::ostre
             write_position += 1;
         }
         else{
-            // std::clog << "<debug> sequential in-place update" << std::endl;
+            update_length += 1;
+            eval.update_times += 1;
 
             size_t current_update_track = get_track(PBA);
 
@@ -134,8 +137,6 @@ void IMR_Sequential::inplace_sequential_write(const Request &request, std::ostre
             else {
                 size_t previous_update_track = get_track(previous_update_PBA);
 
-                // std::clog << "<debug> current_update_track: " << current_update_track << std::endl;
-                // std::clog << "<debug> previous_update_track: " << previous_update_track << std::endl;
                 if(current_update_track != previous_update_track){
                     // * read left top track
                     if(current_update_track >= 1 && track_written[current_update_track - 1]) {
@@ -202,6 +203,8 @@ void IMR_Sequential::inplace_sequential_write(const Request &request, std::ostre
             previous_update_PBA = PBA;
         }
     }
+
+    eval.insert_update_dist(update_length);
 	
     // * output file
     write_requests_file(requests, output_file);
@@ -212,6 +215,8 @@ void IMR_Sequential::outplace_sequential_write(const Request &request, std::ostr
 
     size_t previous_write_PBA = -1;
     size_t previous_update_PBA = -1;
+
+    size_t update_length = 0;
 
     for(size_t i = 0; i < request.size; ++i){
         size_t LBA = request.address + i;
@@ -279,6 +284,9 @@ void IMR_Sequential::outplace_sequential_write(const Request &request, std::ostr
             write_position += 1;
         }
         else{
+            update_length += 1;
+            eval.update_times += 1;
+
             size_t current_update_track = get_track(write_position);
 
             if(isTop(current_update_track) || current_update_track == 0){
@@ -342,6 +350,8 @@ void IMR_Sequential::outplace_sequential_write(const Request &request, std::ostr
         }
         
     }
+
+    eval.insert_update_dist(update_length);
 
     // * output file
     write_requests_file(requests, output_file);

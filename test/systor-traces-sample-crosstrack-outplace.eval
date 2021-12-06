@@ -2,12 +2,17 @@ Options
 options.UPDATE_METHOD: 1
 options.TOTAL_BOTTOM_TRACK: 501
 options.TOTAL_TOP_TRACK: 500
-options.TRACK_NUM : 1001
+options.TRACK_NUM: 1001
+options.HOT_DATA_DEF_SIZE: 8
 ==========
 Total Sector Used: 75849 / 1949550
 Total Sector Used Ratio: 3.89%
 Total Track Used: 37 / 1001
 Total Track Used Ratio: 3.70%
+Update Times: 74
+Update Distribution: 
+update_size_1,update_size_2,update_size_4,update_size_8,update_size_16,update_size_32,update_size_64,update_size_128,update_size_256,update_size_512,update_size_up
+2,0,0,9,0,0,0,0,0,0,0
 Last Write Position: 142270
 Direct Update Bottom Count: 74
 Direct Update Top Count: 0

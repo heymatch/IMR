@@ -41,7 +41,8 @@ void IMR_Base::evaluation(std::ofstream &evaluation_file){
     evaluation_file << "options.UPDATE_METHOD: " << options.UPDATE_METHOD << "\n";
     evaluation_file << "options.TOTAL_BOTTOM_TRACK: " << options.TOTAL_BOTTOM_TRACK << "\n";
     evaluation_file << "options.TOTAL_TOP_TRACK: " << options.TOTAL_TOP_TRACK << "\n";
-    evaluation_file << "options.TRACK_NUM : " << options.TRACK_NUM << "\n";
+    evaluation_file << "options.TRACK_NUM: " << options.TRACK_NUM << "\n";
+    evaluation_file << "options.HOT_DATA_DEF_SIZE: " << options.HOT_DATA_DEF_SIZE << "\n";
 
     evaluation_file << "==========" << "\n";
     
@@ -58,6 +59,19 @@ void IMR_Base::evaluation(std::ofstream &evaluation_file){
     size_t total_tracks = options.TOTAL_TOP_TRACK + options.TOTAL_BOTTOM_TRACK;
     evaluation_file << "Total Track Used: " << total_track_used << " / " << total_tracks << "\n";
     evaluation_file << "Total Track Used Ratio: " << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
+
+    evaluation_file << "Update Times: " << eval.update_times << "\n";
+    evaluation_file << "Update Distribution: " << "\n";
+    for(size_t i = 0; i < 11; ++i){
+        if(i == 10)
+            evaluation_file << "update_size_up"  << "\n";
+        else
+            evaluation_file << "update_size_" << (1 << i) << ",";
+    }
+    for(size_t i = 0; i < 11; ++i){
+        evaluation_file << eval.update_dist[i];
+        if(i == 10) evaluation_file << "\n"; else evaluation_file << ",";
+    }
 
 }
 

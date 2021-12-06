@@ -51,6 +51,8 @@ void IMR_Crosstrack::inplace_crosstrack_write(const Request &request, std::ostre
 
     size_t previous_PBA = -1;
 
+    size_t update_length = 0;
+
     for(size_t i = 0; i < request.size; ++i){
         size_t LBA = request.address + i;
         size_t PBA = get_PBA(LBA);
@@ -82,15 +84,18 @@ void IMR_Crosstrack::inplace_crosstrack_write(const Request &request, std::ostre
 				write_position += 1;
         }
         else{
+            update_length += 1;
+            eval.update_times += 1;
+
             size_t current_update_track = get_track(PBA);
 
             if(
                 isTop(current_update_track) 
             ){
                 if(isTop(current_update_track) )
-                    Evaluation::direct_update_top_count += 1;
+                    eval.direct_update_top_count += 1;
                 else 
-                    Evaluation::direct_update_bottom_count += 1;
+                    eval.direct_update_bottom_count += 1;
 
                 Request writeRequest(
                     request.timestamp,
@@ -103,7 +108,7 @@ void IMR_Crosstrack::inplace_crosstrack_write(const Request &request, std::ostre
                 requests.push_back(writeRequest);
             }
             else {
-                Evaluation::inplace_update_count += 1;
+                eval.inplace_update_count += 1;
 
                 size_t previous_update_track = get_track(previous_PBA);
 
@@ -176,6 +181,8 @@ void IMR_Crosstrack::inplace_crosstrack_write(const Request &request, std::ostre
 
         previous_PBA = PBA;
     }
+
+    eval.insert_update_dist(update_length);
 	
     // * output
     write_requests_file(requests, output_file);
@@ -183,6 +190,8 @@ void IMR_Crosstrack::inplace_crosstrack_write(const Request &request, std::ostre
 
 void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostream &output_file){
     std::vector<Request> requests;
+
+    size_t update_length = 0;
 
     for(size_t i = 0; i < request.size; ++i){
         size_t LBA = request.address + i;
@@ -217,6 +226,9 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
         }
         // * PBA exists, update
         else{
+            update_length += 1;
+            eval.update_times += 1;
+
             size_t current_update_track = get_track(PBA);
 
             if(
@@ -225,9 +237,9 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
                 || (!track_written[current_update_track - 1] && !track_written[current_update_track + 1])
             ){
                 if(isTop(current_update_track) )
-                    Evaluation::direct_update_top_count += 1;
+                    eval.direct_update_top_count += 1;
                 else 
-                    Evaluation::direct_update_bottom_count += 1;
+                    eval.direct_update_bottom_count += 1;
 
                 Request writeRequest(
                     request.timestamp,
@@ -242,7 +254,7 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
                 track_written[current_update_track] = true;
             }
             else{
-                Evaluation::outplace_update_count += 1;
+                eval.outplace_update_count += 1;
 
                 size_t current_write_track = get_track(write_position);
                 Request writeRequest(
@@ -272,6 +284,8 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
         }
     }
 
+    eval.insert_update_dist(update_length);
+
     // * output
     write_requests_file(requests, output_file);
 }
@@ -280,8 +294,8 @@ void IMR_Crosstrack::evaluation(std::ofstream &evaluation_file){
     IMR_Base::evaluation(evaluation_file);
 
     evaluation_file << "Last Write Position: " << write_position << "\n";
-    evaluation_file << "Direct Update Bottom Count: " << Evaluation::direct_update_bottom_count << "\n";
-    evaluation_file << "Direct Update Top Count: " << Evaluation::direct_update_top_count << "\n";
-    evaluation_file << "Inplace Update Count: " << Evaluation::inplace_update_count << "\n";
-    evaluation_file << "Outplace Update Count: " << Evaluation::outplace_update_count << "\n";
+    evaluation_file << "Direct Update Bottom Count: " << eval.direct_update_bottom_count << "\n";
+    evaluation_file << "Direct Update Top Count: " << eval.direct_update_top_count << "\n";
+    evaluation_file << "Inplace Update Count: " << eval.inplace_update_count << "\n";
+    evaluation_file << "Outplace Update Count: " << eval.outplace_update_count << "\n";
 }

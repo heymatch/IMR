@@ -10,6 +10,65 @@
 #include <queue>
 #include <iomanip>
 
+struct Evaluation{
+    Evaluation(){
+        update_times = 0;
+        inplace_update_count = 0;
+        outplace_update_count = 0;
+        direct_update_bottom_count = 0;
+        direct_update_top_count = 0;
+
+        hot_write_times = 0;
+        hot_update_times = 0;
+
+        cold_write_times = 0;
+        cold_update_times = 0;
+
+        buffer_update_times = 0;
+
+        cache_check_times = 0;
+        cache_load_times = 0;
+        cache_write_times = 0;
+
+        write_buffer_times = 0;
+        write_buffer_requests = 0;
+    }
+
+    size_t update_times;
+    // 1 ~ 1024 ~ up
+    size_t update_dist[11];
+    size_t inplace_update_count = 0;
+    size_t outplace_update_count = 0;
+    size_t direct_update_bottom_count = 0;
+    size_t direct_update_top_count = 0;
+
+    size_t hot_write_times = 0;
+    size_t hot_update_times = 0;
+
+    size_t cold_write_times = 0;
+    size_t cold_update_times = 0;
+
+    size_t buffer_update_times = 0;
+
+    size_t cache_check_times = 0;
+    size_t cache_load_times = 0;
+    size_t cache_write_times = 0;
+
+    size_t write_buffer_times = 0;
+    size_t write_buffer_requests = 0;
+
+    void insert_update_dist(const size_t &length){
+        if(length == 0) return;
+
+        for(int i = 0; i < 11; ++i){
+            if(length <= (1 << i)){
+                update_dist[i] += 1;
+                return;
+            }
+        }
+    }
+};
+
 enum Update_Method{
     IN_PLACE,
     OUT_PLACE
@@ -29,7 +88,7 @@ struct Options{
 
         Update_Method update_method = Update_Method::IN_PLACE,
 
-        size_t hot_data_def_size = 64,
+        size_t hot_data_def_size = 8,
         size_t partition_size = 500,
         size_t max_partition_size = 2000,
         size_t buffer_size = 21,
@@ -183,11 +242,13 @@ public:
     // * For evaluation
     inline size_t get_LBA_size() { return std::max(LBA_to_PBA.size(), PBA_to_LBA.size()); }
 
+    Evaluation eval;
 private:
     std::unordered_map<size_t, size_t> LBA_to_PBA;
     std::unordered_map<size_t, size_t> PBA_to_LBA;
     // std::vector<size_t> LBA_to_PBA;
     // std::vector<size_t> PBA_to_LBA;
+    
 };
 
 #endif

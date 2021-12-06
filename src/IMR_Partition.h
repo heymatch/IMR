@@ -3,23 +3,6 @@
 
 #include "IMR_Base.h"
 
-namespace Evaluation{
-    static size_t hot_write_times = 0;
-    static size_t hot_update_times = 0;
-
-    static size_t cold_write_times = 0;
-    static size_t cold_update_times = 0;
-
-    static size_t buffer_update_times = 0;
-
-    static size_t cache_check_times = 0;
-    static size_t cache_load_times = 0;
-    static size_t cache_write_times = 0;
-
-    static size_t write_buffer_times = 0;
-    static size_t write_buffer_requests = 0;
-}
-
 struct Partition{
     Partition() :
     cold_extending(false),

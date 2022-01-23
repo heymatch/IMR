@@ -4,24 +4,24 @@ options.TOTAL_BOTTOM_TRACK: 10501
 options.TOTAL_TOP_TRACK: 10500
 options.TRACK_NUM: 21001
 options.HOT_DATA_DEF_SIZE: 64
-options.APPEND_PARTS: 1
+options.APPEND_PARTS: 10
 options.APPEND_COLD_SIZE: 0.20
 === Trace Information ===
 eval.trace_requests: 999
-eval.append_trace_size: 76411
-eval.max_LBA: 9444778269
+eval.append_trace_size: 18921
+eval.max_LBA: 26479297
 === Evaluation ===
-Total Sector Used: 76089 / 40899550
-Total Sector Used Ratio: 0.19%
-Total Track Used: 41 / 21001
-Total Track Used Ratio: 0.20%
+Total Sector Used: 0 / 40899550
+Total Sector Used Ratio: 0.00%
+Total Track Used: 9 / 21001
+Total Track Used Ratio: 0.04%
 Update Counts (request): 0
-Last Hot Write Position: 19601
-Last Cold Write Position: 906621
-Hot Write Sectors: 10375
-Hot Update Sectors: 82
-Cold Write Sectors: 65474
-Cold Update Sectors: 480
+Last Hot Write Position: 20242
+Last Cold Write Position: 962071
+Hot Write Sectors: 11016
+Hot Update Sectors: 3577
+Cold Write Sectors: 4104
+Cold Update Sectors: 0
 Cache Check Requests: 0
 Cache Load Requests: 0
 Cache Write Requests: 0

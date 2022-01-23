@@ -1,6 +1,6 @@
 # set C++ compiler
 CC := g++
-CFLAGS := -std=c++11 -O2 -static
+CFLAGS := -std=c++11 -O2 -static -pipe
 OUTPUT := IMR
 
 $(shell mkdir -p obj)

@@ -47,9 +47,10 @@ public:
 
     void initialize(std::ifstream &);
     void run(std::ifstream &, std::ofstream &);
-    void evaluation(std::ofstream &);
+    void evaluation(std::string &);
 
     void write(const Request &, std::ostream &);
+    void write_append(const Request &, std::ostream &);
 
     // * for Partition
 

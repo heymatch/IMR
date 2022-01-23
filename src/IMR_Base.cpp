@@ -31,46 +31,67 @@ void IMR_Base::initialize(std::ifstream &setting_file){
         }
     }
 
-    options.TRACK_NUM = options.TOTAL_BOTTOM_TRACK + options.TOTAL_TOP_TRACK;
+    options.TOTAL_TRACKS = options.TOTAL_BOTTOM_TRACK + options.TOTAL_TOP_TRACK;
+    options.TOTAL_SECTORS = options.SECTORS_PER_BOTTOM_TRACK * options.TOTAL_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK * options.TOTAL_TOP_TRACK;
+
+    // *
+    #ifdef VECTOR_MAPPING
+    LBA_to_PBA.resize(options.TOTAL_SECTORS, -1);
+    PBA_to_LBA.resize(options.TOTAL_SECTORS, -1);
+    #endif
 }
 
-void IMR_Base::evaluation(std::ofstream &evaluation_file){
-    evaluation_file << std::fixed << std::setprecision(2);
+void IMR_Base::evaluation(std::string &evaluation_file){
+    evaluation_stream.open(evaluation_file + ".eval");
+    distribution_stream.open(evaluation_file + ".dist");
 
-    evaluation_file << "Options" << "\n";
-    evaluation_file << "options.UPDATE_METHOD: " << options.UPDATE_METHOD << "\n";
-    evaluation_file << "options.TOTAL_BOTTOM_TRACK: " << options.TOTAL_BOTTOM_TRACK << "\n";
-    evaluation_file << "options.TOTAL_TOP_TRACK: " << options.TOTAL_TOP_TRACK << "\n";
-    evaluation_file << "options.TRACK_NUM: " << options.TRACK_NUM << "\n";
-    evaluation_file << "options.HOT_DATA_DEF_SIZE: " << options.HOT_DATA_DEF_SIZE << "\n";
+    evaluation_stream << std::fixed << std::setprecision(2);
 
-    evaluation_file << "==========" << "\n";
-    
-    size_t total_sectors = 
-        options.SECTORS_PER_BOTTOM_TRACK * options.TOTAL_BOTTOM_TRACK + 
-        options.SECTORS_PER_TOP_TRACK * options.TOTAL_TOP_TRACK;
-    evaluation_file << "Total Sector Used: " << get_LBA_size() << " / " << total_sectors << "\n";
-    evaluation_file << "Total Sector Used Ratio: " << ((double) get_LBA_size() / (double) total_sectors) * 100.0 << "%" << "\n";
+    evaluation_stream << "=== Options ==="                                              << "\n";
+    evaluation_stream << "options.UPDATE_METHOD: "      << options.UPDATE_METHOD        << "\n";
+    evaluation_stream << "options.TOTAL_BOTTOM_TRACK: " << options.TOTAL_BOTTOM_TRACK   << "\n";
+    evaluation_stream << "options.TOTAL_TOP_TRACK: "    << options.TOTAL_TOP_TRACK      << "\n";
+    evaluation_stream << "options.TRACK_NUM: "          << options.TOTAL_TRACKS         << "\n";
+    evaluation_stream << "options.HOT_DATA_DEF_SIZE: "  << options.HOT_DATA_DEF_SIZE    << "\n";
+    evaluation_stream << "options.APPEND_PARTS: "       << options.APPEND_PARTS         << "\n";
+    evaluation_stream << "options.APPEND_COLD_SIZE: "   << options.APPEND_COLD_SIZE     << "\n";
+
+    evaluation_stream << "=== Trace Information ==="                                    << "\n";
+    evaluation_stream << "eval.trace_requests: "        << eval.trace_requests          << "\n";
+    evaluation_stream << "eval.append_trace_size: "     << eval.append_trace_size       << "\n";
+    evaluation_stream << "eval.max_LBA: "               << eval.max_LBA                 << "\n";
+
+    evaluation_stream << "=== Evaluation ==="                                             << "\n";
+    #ifdef MAP_MAPPING
+    evaluation_stream << "Total Sector Used: " << get_LBA_size() << " / " << options.TOTAL_SECTORS << "\n";
+    evaluation_stream << "Total Sector Used Ratio: " << ((double) get_LBA_size() / (double) options.TOTAL_SECTORS) * 100.0 << "%" << "\n";
+    #endif
+    #ifdef VECTOR_MAPPING
+    evaluation_stream << "Total Sector Used: "            << eval.total_sector_used << " / " << options.TOTAL_SECTORS                             << "\n";
+    evaluation_stream << "Total Sector Used Ratio: "      << ((double) eval.total_sector_used / (double) options.TOTAL_SECTORS) * 100.0 << "%"    << "\n";
+    #endif
 
     size_t total_track_used = 0;
     for(size_t i = 0; i < track_written.size(); ++i){
         if(track_written[i]) ++total_track_used;
     }
     size_t total_tracks = options.TOTAL_TOP_TRACK + options.TOTAL_BOTTOM_TRACK;
-    evaluation_file << "Total Track Used: " << total_track_used << " / " << total_tracks << "\n";
-    evaluation_file << "Total Track Used Ratio: " << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
+    evaluation_stream << "Total Track Used: " << total_track_used << " / " << total_tracks << "\n";
+    evaluation_stream << "Total Track Used Ratio: " << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
 
-    evaluation_file << "Update Times: " << eval.update_times << "\n";
-    evaluation_file << "Update Distribution: " << "\n";
+    evaluation_stream << "Update Counts (request): " << eval.update_times << "\n";
+
+
+    distribution_stream << "Update Distribution: " << "\n";
     for(size_t i = 0; i < 11; ++i){
         if(i == 10)
-            evaluation_file << "update_size_up"  << "\n";
+            distribution_stream << "update_size_up"  << "\n";
         else
-            evaluation_file << "update_size_" << (1 << i) << ",";
+            distribution_stream << "update_size_" << (1 << i) << ",";
     }
     for(size_t i = 0; i < 11; ++i){
-        evaluation_file << eval.update_dist[i];
-        if(i == 10) evaluation_file << "\n"; else evaluation_file << ",";
+        distribution_stream << eval.update_dist[i];
+        if(i == 10) distribution_stream << "\n"; else distribution_stream << ",";
     }
 
 }
@@ -163,8 +184,15 @@ void IMR_Base::write_requests_file(const std::vector<Request> &requests, std::os
 }
 
 void IMR_Base::read_file(std::istream &input_file){
+    size_t min_addr = -1;
+    size_t max_addr = 0;
+
     size_t line_counter = 1;
     std::string line;
+
+    size_t trace_requests = 0;
+    size_t append_trace_size = 0;
+
     // * remove header
     std::getline(input_file, line);
 
@@ -195,6 +223,13 @@ void IMR_Base::read_file(std::istream &input_file){
             trace.size = std::stoull(fields[5]);
         }
 
+        if(trace.iotype == '1'){
+            trace.iotype = 'R';
+        }
+        else if(trace.iotype == '0'){
+            trace.iotype = 'W';
+        }
+
         // std::clog << std::fixed << trace;
 
         // if(!trace_stream.eof()){
@@ -205,9 +240,22 @@ void IMR_Base::read_file(std::istream &input_file){
         trace.timestamp *= 1000.0;
         trace.address /= 512;
         trace.size /= 512;
+        
+        min_addr = std::min(min_addr, trace.address);
+        max_addr = std::max(max_addr, trace.address);
 
         order_queue.push(trace);
+
+        trace_requests += 1;
+        append_trace_size += trace.size;
     }
+
+    eval.trace_requests = trace_requests;
+    eval.append_trace_size = append_trace_size;
+    eval.shifting_address = min_addr;
+    eval.max_LBA = max_addr - min_addr;
+
+    std::clog << "<debug> max LBA: " << eval.max_LBA << std::endl;
 }
 
 void IMR_Base::write_file(std::ostream &output_file){

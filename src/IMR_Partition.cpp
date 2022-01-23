@@ -7,7 +7,7 @@ void IMR_Partition::initialize(std::ifstream &setting_file){
     // * init 
     // LBA_to_PBA.resize(options.LBA_TOTAL + 1, -1);
 	// PBA_to_LBA.resize(options.LBA_TOTAL + 1, -1);
-	track_written.resize(options.TRACK_NUM, false);
+	track_written.resize(options.TOTAL_TRACKS, false);
 
     // * init write position
     hot_write_position = 1;
@@ -35,9 +35,33 @@ void IMR_Partition::run(std::ifstream &input_file, std::ofstream &output_file){
     while(!order_queue.empty()){
         Request trace = order_queue.top();
         order_queue.pop();
+        trace.address -= eval.shifting_address;
 
-        if(processing++ % 1000000 == 0){
+        if(processing % (eval.trace_requests / 100) == 0){
             std::clog << "<log> processing " << processing << std::endl;
+        }
+
+        if(processing != 0 && processing % (eval.trace_requests / options.APPEND_PARTS) == 0){
+            size_t append_size = eval.append_trace_size * options.APPEND_COLD_SIZE;
+            size_t remainder = options.TOTAL_SECTORS - eval.total_sector_used;
+            if(append_size > remainder){
+                append_size = remainder / options.APPEND_PARTS;
+            }
+            std::clog << "<log> append trace " << append_size << " at processing " << processing << std::endl;
+
+            for(size_t append = append_size; append > 0 && append > (1 << 20); append -= 1 << 20){
+                Request append_trace(
+                    trace.timestamp,
+                    'W',
+                    eval.max_LBA + 1,
+                    1 << 20,
+                    trace.device
+                );
+                write_append(append_trace, output_file);
+                eval.total_sector_used += 1 << 20;
+            }
+
+            eval.append_count += 1;
         }
 
         // * read request
@@ -50,6 +74,8 @@ void IMR_Partition::run(std::ifstream &input_file, std::ofstream &output_file){
             trace.iotype = '0';
             write(trace, output_file);
         }
+
+        processing++;
     }
 }
 
@@ -90,6 +116,89 @@ void IMR_Partition::write(const Request &trace, std::ostream &output_file){
     }
 }
 
+void IMR_Partition::write_append(const Request &request, std::ostream &output_file){
+    std::vector<Request> requests;
+
+    for(size_t i = 0; i < request.size; ++i){
+        size_t LBA = request.address;
+
+        eval.cold_write_sectors += 1;
+
+        if(get_partition_position(get_track(cold_write_position)) != latest_partition){
+            cache_partition(request, get_partition_position(get_track(cold_write_position)), output_file);
+        }
+
+        Request writeRequest(
+            request.timestamp,
+            'W',
+            cold_write_position,
+            1,
+            request.device
+        );
+        requests.push_back(writeRequest);
+        set_LBA_to_PBA(LBA, cold_write_position);
+        // set_PBA_to_LBA(cold_write_position, LBA);
+        track_written.at(get_track(cold_write_position)) = true;
+
+        Partition &lastPartition = partitions[partitions.size() - 1];
+        if(get_track(cold_write_position) != get_track(cold_write_position + 1)){
+            
+            lastPartition.used_cold_tracks += 1;
+
+            if(!lastPartition.cold_extending){
+                if(isTop(get_track(cold_write_position))){
+                    cold_write_position = get_track_head(get_track(cold_write_position) - 3);
+                }
+                else if(get_track(cold_write_position) == lastPartition.head + options.PARTITION_SIZE - 2){
+                    cold_write_position = get_track_head(get_track(cold_write_position) - 2);
+                }
+
+                if(get_track(cold_write_position) < lastPartition.head + lastPartition.hot_size + options.BUFFER_SIZE + 1) {
+                    lastPartition.cold_extending = true;
+                    lastPartition.size += 2;
+                    cold_write_position = get_track_head(lastPartition.head + lastPartition.size - 2);
+                }
+            }
+            else{
+                if(isTop(get_track(cold_write_position))){
+                    if(lastPartition.size < options.MAX_PARTITION_SIZE) {	//keep expanding
+                        lastPartition.size += 2;
+                        cold_write_position = get_track_head(lastPartition.head + lastPartition.size - 2);
+                    }
+                    else{
+                        Partition newPartition;
+                        newPartition.head = lastPartition.head + lastPartition.size;
+                        newPartition.size = options.PARTITION_SIZE;
+                        newPartition.hot_size = lastPartition.hot_size / 2;
+                        if (newPartition.hot_size % 2 == 1) {			
+                            newPartition.hot_size += 1;
+                        }
+                        newPartition.buffer_write_position = newPartition.buffer_head = get_track_head(newPartition.head + newPartition.hot_size);
+                        newPartition.buffer_PBA.resize(options.SECTORS_OF_BUFFER, -1);
+
+                        partitions.push_back(newPartition);
+
+                        hot_write_position = get_track_head(newPartition.head);
+                        cold_write_position = get_track_head(newPartition.head + newPartition.size - 2);
+                        cache_partition(request, partitions.size() - 1, output_file);
+                    }
+                }
+                else{
+                    cold_write_position = get_track_head(get_track(cold_write_position) - 1);
+                }
+            }
+        }
+        
+        cold_write_position += 1;
+        if (get_track(cold_write_position) == lastPartition.head + options.PARTITION_SIZE - 3) {
+            cold_write_position = get_track_head(get_track(cold_write_position) - 3);
+        }
+
+    }
+
+    write_requests_file(requests, output_file);
+}
+
 void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_file){
     std::vector<Request> requests;
 
@@ -115,7 +224,8 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
                 request.device
             );
             requests.push_back(writeRequest);
-            set_LBA_PBA(LBA, hot_write_position);
+            set_LBA_to_PBA(LBA, hot_write_position);
+            // set_PBA_to_LBA(hot_write_position, LBA);
             track_written.at(get_track(hot_write_position)) = true;
 
             hot_write_position += 1;
@@ -245,7 +355,8 @@ void IMR_Partition::hot_data_write(const Request &request, std::ostream &output_
                 requests.push_back(writeRequest);
                 track_written[get_track(partitions[get_partition_position(get_track(PBA))].buffer_write_position)] = true;
 
-                set_LBA_PBA(request.address, partitions[get_partition_position(get_track(PBA))].buffer_write_position);
+                set_LBA_to_PBA(request.address, partitions[get_partition_position(get_track(PBA))].buffer_write_position);
+                // set_PBA_to_LBA(partitions[get_partition_position(get_track(PBA))].buffer_write_position, request.address);
                 partitions[get_partition_position(get_track(PBA))].buffer_PBA[partitions[get_partition_position(get_track(PBA))].buffer_write_position - get_track_head(partitions[get_partition_position(get_track(PBA))].head + partitions[get_partition_position(get_track(PBA))].hot_size)] = PBA;
                 partitions[get_partition_position(get_track(PBA))].buffer_write_position += 1;
 
@@ -276,7 +387,7 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
 
         // * write new cold data
         if(PBA == -1){
-            eval.cold_write_times += 1;
+            eval.cold_write_sectors += 1;
 
             if(get_partition_position(get_track(cold_write_position)) != latest_partition){
                 cache_partition(request, get_partition_position(get_track(cold_write_position)), output_file);
@@ -290,7 +401,8 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
                 request.device
             );
             requests.push_back(writeRequest);
-            set_LBA_PBA(LBA, cold_write_position);
+            set_LBA_to_PBA(LBA, cold_write_position);
+            // set_PBA_to_LBA(cold_write_position, LBA);
             track_written.at(get_track(cold_write_position)) = true;
 
             Partition &lastPartition = partitions[partitions.size() - 1];
@@ -443,7 +555,8 @@ void IMR_Partition::cold_data_write(const Request &request, std::ostream &output
                 requests.push_back(writeRequest);
                 track_written[get_track(partitions[get_partition_position(get_track(PBA))].buffer_write_position)] = true;
 
-                set_LBA_PBA(request.address, partitions[get_partition_position(get_track(PBA))].buffer_write_position);
+                set_LBA_to_PBA(request.address, partitions[get_partition_position(get_track(PBA))].buffer_write_position);
+                // set_PBA_to_LBA(partitions[get_partition_position(get_track(PBA))].buffer_write_position, request.address);
                 partitions[get_partition_position(get_track(PBA))].buffer_PBA[partitions[get_partition_position(get_track(PBA))].buffer_write_position - get_track_head(partitions[get_partition_position(get_track(PBA))].head + partitions[get_partition_position(get_track(PBA))].hot_size)] = PBA;
                 partitions[get_partition_position(get_track(PBA))].buffer_write_position += 1;
 
@@ -471,6 +584,7 @@ void IMR_Partition::write_buffer(Partition &current_partition, const Request &wr
 		size_t target_PBA = current_partition.buffer_PBA[i];
 			
 		if (target_PBA != -1) {
+
             // * calculating size of a sequential data
 
             size_t previous_PBA = current_partition.buffer_PBA[i];
@@ -590,11 +704,17 @@ void IMR_Partition::write_buffer(Partition &current_partition, const Request &wr
 			}
 
 			// * write segments from bottom tracks into top tracks
-
-            // * last cold tracks can't be written
-			if (get_track(target_PBA) + 1 < current_partition.head + current_partition.size - 1) { 
-                size_t write_addr = get_track_head(get_track(target_PBA) + 1);
+            {
+                size_t write_addr;
                 size_t write_size = segments * options.SEGMENT_SIZE;
+
+                // * last cold tracks can't be written
+                if(get_track(target_PBA) + 1 < current_partition.head + current_partition.size - 1){
+                    write_addr = get_track_head(get_track(target_PBA) + 1);
+                }
+                else{
+                    write_addr = get_track_head(get_track(target_PBA) - 1);
+                }
 
                 Request writeRequest(
                     write_request.timestamp,
@@ -613,7 +733,8 @@ void IMR_Partition::write_buffer(Partition &current_partition, const Request &wr
                     size_t write_LBA = get_LBA(write_PBA);
                     size_t buffer_PBA = buffer_addr + j;
 
-                    set_LBA_PBA(write_LBA, buffer_PBA);
+                    set_LBA_to_PBA(write_LBA, buffer_PBA);
+                    // set_PBA_to_LBA(buffer_PBA, write_LBA);
 				}
 				// * update mapping of sectors from buffer
 				for (int j = 0; j < seq_size; j++) {
@@ -621,41 +742,75 @@ void IMR_Partition::write_buffer(Partition &current_partition, const Request &wr
                     size_t buffer_LBA = get_LBA(buffer_PBA);
                     size_t new_PBA = target_PBA + j - buffer_addr + write_addr;
 
-                    set_LBA_PBA(buffer_LBA, new_PBA);
+                    set_LBA_to_PBA(buffer_LBA, new_PBA);
+                    // set_PBA_to_LBA(new_PBA, buffer_LBA);
 				}
-			}
-			else {
-                size_t write_addr = get_track_head(get_track(target_PBA) - 1);
-                size_t write_size = segments * options.SEGMENT_SIZE;
+            }
 
-                Request writeRequest(
-                    write_request.timestamp,
-                    'W',
-                    write_addr,
-                    write_size,
-                    write_request.device
-                );
+			// if (get_track(target_PBA) + 1 < current_partition.head + current_partition.size - 1) { 
+            //     size_t write_addr = get_track_head(get_track(target_PBA) + 1);
+            //     size_t write_size = segments * options.SEGMENT_SIZE;
 
-                requests.push_back(writeRequest);
+            //     Request writeRequest(
+            //         write_request.timestamp,
+            //         'W',
+            //         write_addr,
+            //         write_size,
+            //         write_request.device
+            //     );
 
-				// * update mapping
-				for (int j = 0; j < write_size; j++) {
-					// * move segments from top to bottom
-                    size_t write_PBA = write_addr + j;
-                    size_t write_LBA = get_LBA(write_PBA);
-                    size_t buffer_PBA = buffer_addr + j;
+            //     requests.push_back(writeRequest);
 
-                    set_LBA_PBA(write_LBA, buffer_PBA);
-				}
-				// * update mapping of sectors from buffer
-				for (int j = 0; j < seq_size; j++) {
-                    size_t buffer_PBA = get_track_head(current_partition.head + current_partition.hot_size) + i + j;
-                    size_t buffer_LBA = get_LBA(buffer_PBA);
-                    size_t new_PBA = target_PBA + j - buffer_addr + write_addr;
+			// 	// * update mapping
+			// 	for (int j = 0; j < write_size; j++) {
+			// 		// * move segments from top to bottom
+            //         size_t write_PBA = write_addr + j;
+            //         size_t write_LBA = get_LBA(write_PBA);
+            //         size_t buffer_PBA = buffer_addr + j;
 
-                    set_LBA_PBA(buffer_LBA, new_PBA);
-				}
-			}
+            //         set_LBA_PBA(write_LBA, buffer_PBA);
+			// 	}
+			// 	// * update mapping of sectors from buffer
+			// 	for (int j = 0; j < seq_size; j++) {
+            //         size_t buffer_PBA = get_track_head(current_partition.head + current_partition.hot_size) + i + j;
+            //         size_t buffer_LBA = get_LBA(buffer_PBA);
+            //         size_t new_PBA = target_PBA + j - buffer_addr + write_addr;
+
+            //         set_LBA_PBA(buffer_LBA, new_PBA);
+			// 	}
+			// }
+			// else {
+            //     size_t write_addr = get_track_head(get_track(target_PBA) - 1);
+            //     size_t write_size = segments * options.SEGMENT_SIZE;
+
+            //     Request writeRequest(
+            //         write_request.timestamp,
+            //         'W',
+            //         write_addr,
+            //         write_size,
+            //         write_request.device
+            //     );
+
+            //     requests.push_back(writeRequest);
+
+			// 	// * update mapping
+			// 	for (int j = 0; j < write_size; j++) {
+			// 		// * move segments from top to bottom
+            //         size_t write_PBA = write_addr + j;
+            //         size_t write_LBA = get_LBA(write_PBA);
+            //         size_t buffer_PBA = buffer_addr + j;
+
+            //         set_LBA_PBA(write_LBA, buffer_PBA);
+			// 	}
+			// 	// * update mapping of sectors from buffer
+			// 	for (int j = 0; j < seq_size; j++) {
+            //         size_t buffer_PBA = get_track_head(current_partition.head + current_partition.hot_size) + i + j;
+            //         size_t buffer_LBA = get_LBA(buffer_PBA);
+            //         size_t new_PBA = target_PBA + j - buffer_addr + write_addr;
+
+            //         set_LBA_PBA(buffer_LBA, new_PBA);
+			// 	}
+			// }
 
 			i += seq_size;
 		}
@@ -712,26 +867,26 @@ void IMR_Partition::cache_partition(const Request &request, const size_t &partit
     write_requests_file(requests, output_file);
 }
 
-void IMR_Partition::evaluation(std::ofstream &evaluation_file){
+void IMR_Partition::evaluation(std::string &evaluation_file){
     IMR_Base::evaluation(evaluation_file);
 
-    evaluation_file << "Last Hot Write Position: " << hot_write_position << "\n";
-    evaluation_file << "Last Cold Write Position: " << cold_write_position << "\n";
+    evaluation_stream << "Last Hot Write Position: " << hot_write_position << "\n";
+    evaluation_stream << "Last Cold Write Position: " << cold_write_position << "\n";
     
 
-    evaluation_file << "Hot Write Times: " << eval.hot_write_times << "\n";
-    evaluation_file << "Hot Update Times: " << eval.hot_update_times << "\n";
+    evaluation_stream << "Hot Write Sectors: " << eval.hot_write_times << "\n";
+    evaluation_stream << "Hot Update Sectors: " << eval.hot_update_times << "\n";
 
-    evaluation_file << "Cold Write Times: " << eval.cold_write_times << "\n";
-    evaluation_file << "Cold Update Times: " << eval.cold_update_times << "\n";
+    evaluation_stream << "Cold Write Sectors: " << eval.cold_write_sectors << "\n";
+    evaluation_stream << "Cold Update Sectors: " << eval.cold_update_times << "\n";
 
-    evaluation_file << "Cache Check Times: " << eval.cache_check_times << "\n";
-    evaluation_file << "Cache Load Times: " << eval.cache_load_times << "\n";
-    evaluation_file << "Cache Write Times: " << eval.cache_write_times << "\n";
+    evaluation_stream << "Cache Check Requests: " << eval.cache_check_times << "\n";
+    evaluation_stream << "Cache Load Requests: " << eval.cache_load_times << "\n";
+    evaluation_stream << "Cache Write Requests: " << eval.cache_write_times << "\n";
 
-    evaluation_file << "Buffer Update Times: " << eval.buffer_update_times << "\n";
-    evaluation_file << "Write Buffer Times: " << eval.write_buffer_times << "\n";
-    evaluation_file << "Write Buffer Requests: " << eval.write_buffer_requests << "\n";
+    evaluation_stream << "Buffer Update Sectors: " << eval.buffer_update_times << "\n";
+    evaluation_stream << "Write Buffer Sectors: " << eval.write_buffer_times << "\n";
+    evaluation_stream << "Write Buffer Requests: " << eval.write_buffer_requests << "\n";
 
     double avg_partition_size = 0.0;
     size_t sum_partition_size = 0;
@@ -749,17 +904,17 @@ void IMR_Partition::evaluation(std::ofstream &evaluation_file){
     avg_partition_size = (double) sum_partition_size / partitions.size();
     avg_partition_hot_size = (double) sum_partition_hot_size / partitions.size();
 
-    evaluation_file << "Total Partitions: " << partitions.size() << "\n";
-    evaluation_file << "Average Partition Size: " << avg_partition_size << "\n";
-    evaluation_file << "Average Partition Hot Size: " << avg_partition_hot_size << "\n";
-    evaluation_file << "Average Partition Cold Size: " << 0 << "\n";
-    evaluation_file << "Average Partition Buffer Size: " << 0 << "\n";
-    evaluation_file << "Sum Partition Size: " << sum_partition_size << "\n";
+    evaluation_stream << "Total Partitions: " << partitions.size() << "\n";
+    evaluation_stream << "Average Partition Size: " << avg_partition_size << "\n";
+    evaluation_stream << "Average Partition Hot Size: " << avg_partition_hot_size << "\n";
+    evaluation_stream << "Average Partition Cold Size: " << 0 << "\n";
+    evaluation_stream << "Average Partition Buffer Size: " << 0 << "\n";
+    evaluation_stream << "Sum Partition Size: " << sum_partition_size << "\n";
 
-    evaluation_file << "Partitions Status:\n";
-    evaluation_file << "Partition,Cache_Load_Times,Used_Hot_Tracks,Used_Cold_Tracks\n";
+    distribution_stream << "Partitions Status:\n";
+    distribution_stream << "Partition,Cache_Load_Times,Used_Hot_Tracks,Used_Cold_Tracks\n";
     for(size_t i = 0; i < partitions.size(); ++i){
-        evaluation_file << 
+        distribution_stream << 
             i << "," <<
             partitions[i].cache_load_times << "," <<
             partitions[i].used_hot_tracks << "," <<

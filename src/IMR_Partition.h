@@ -8,12 +8,13 @@ struct Partition{
     cold_extending(false),
     used_hot_tracks(0),
     used_cold_tracks(0),
-    cache_load_times(0)
+    cache_load_counts(0)
     {}
 
     size_t head;
     size_t size;
     size_t hot_size;
+    size_t id;
 
     size_t buffer_head;
     size_t buffer_write_position;
@@ -25,9 +26,12 @@ struct Partition{
 
     bool cold_extending;
 
+    // * for evaluation
+
     size_t used_hot_tracks;
     size_t used_cold_tracks;
-    size_t cache_load_times;
+    size_t cache_load_counts;
+    size_t partition_reload_counts = 0;
 };
 
 class IMR_Partition : public IMR_Base{

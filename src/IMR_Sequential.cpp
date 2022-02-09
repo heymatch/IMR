@@ -20,7 +20,7 @@ void IMR_Sequential::run(std::ifstream &input_file, std::ofstream &output_file){
         trace.address -= eval.shifting_address;
 
         if(processing % (eval.trace_requests / 100) == 0){
-            std::clog << "<log> processing " << processing << std::endl;
+            std::clog << "<log> processing " << processing << "\r" << std::flush;
         }
 
         if(processing != 0 && processing % (eval.trace_requests / options.APPEND_PARTS) == 0){

@@ -11,9 +11,11 @@ eval.trace_requests: 999
 eval.append_trace_size: 76411
 eval.max_LBA: 9444778269
 === Evaluation ===
-Total Sector Used: 76089 / 40899550
+Total Sector: 40899550
+Total Sector Used: 76089
 Total Sector Used Ratio: 0.19%
-Total Track Used: 41 / 21001
+Total Track: 21001
+Total Track Used: 41
 Total Track Used Ratio: 0.20%
 Update Counts (request): 0
 Last Hot Write Position: 19601

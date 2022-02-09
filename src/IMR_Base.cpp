@@ -61,10 +61,11 @@ void IMR_Base::evaluation(std::string &evaluation_file){
     evaluation_stream << "eval.append_trace_size: "     << eval.append_trace_size       << "\n";
     evaluation_stream << "eval.max_LBA: "               << eval.max_LBA                 << "\n";
 
-    evaluation_stream << "=== Evaluation ==="                                             << "\n";
+    evaluation_stream << "=== Evaluation ==="                                           << "\n";
     #ifdef MAP_MAPPING
-    evaluation_stream << "Total Sector Used: " << get_LBA_size() << " / " << options.TOTAL_SECTORS << "\n";
-    evaluation_stream << "Total Sector Used Ratio: " << ((double) get_LBA_size() / (double) options.TOTAL_SECTORS) * 100.0 << "%" << "\n";
+    evaluation_stream << "Total Sector: "               << options.TOTAL_SECTORS        << "\n";
+    evaluation_stream << "Total Sector Used: "          << get_LBA_size()               << "\n";
+    evaluation_stream << "Total Sector Used Ratio: "    << ((double) get_LBA_size() / (double) options.TOTAL_SECTORS) * 100.0 << "%" << "\n";
     #endif
     #ifdef VECTOR_MAPPING
     evaluation_stream << "Total Sector Used: "            << eval.total_sector_used << " / " << options.TOTAL_SECTORS                             << "\n";
@@ -76,10 +77,11 @@ void IMR_Base::evaluation(std::string &evaluation_file){
         if(track_written[i]) ++total_track_used;
     }
     size_t total_tracks = options.TOTAL_TOP_TRACK + options.TOTAL_BOTTOM_TRACK;
-    evaluation_stream << "Total Track Used: " << total_track_used << " / " << total_tracks << "\n";
-    evaluation_stream << "Total Track Used Ratio: " << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
+    evaluation_stream << "Total Track: "                << total_tracks                 << "\n";
+    evaluation_stream << "Total Track Used: "           << total_track_used             << "\n";
+    evaluation_stream << "Total Track Used Ratio: "     << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
 
-    evaluation_stream << "Update Counts (request): " << eval.update_times << "\n";
+    evaluation_stream << "Update Counts (request): "    << eval.update_times            << "\n";
 
 
     distribution_stream << "Update Distribution: " << "\n";

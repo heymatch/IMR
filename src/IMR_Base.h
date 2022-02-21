@@ -21,7 +21,7 @@ struct Evaluation{
         direct_update_bottom_count = 0;
         direct_update_top_count = 0;
 
-        hot_write_times = 0;
+        hot_write_sector_count = 0;
         hot_update_times = 0;
 
         cold_write_sectors = 0;
@@ -39,7 +39,8 @@ struct Evaluation{
 
     size_t append_trace_size = 0;
     size_t trace_total_size = 0;
-    size_t trace_requests = 0;
+    size_t trace_total_requests = 0;
+    size_t processing = 0;
 
     size_t shifting_address;
     size_t max_LBA;
@@ -53,10 +54,12 @@ struct Evaluation{
     size_t direct_update_bottom_count = 0;
     size_t direct_update_top_count = 0;
 
-    size_t hot_write_times = 0;
+    size_t hot_write_sector_count = 0;
+    size_t hot_write_request_count = 0;
     size_t hot_update_times = 0;
 
     size_t cold_write_sectors = 0;
+    size_t cold_write_request_count = 0;
     size_t cold_update_times = 0;
 
     size_t buffer_update_times = 0;
@@ -119,13 +122,13 @@ struct Options{
         UPDATE_METHOD(update_method),
 
         HOT_DATA_DEF_SIZE(hot_data_def_size),
-        PARTITION_SIZE(partition_size),
+        BASE_PARTITION_TRACK_SIZE(partition_size),
         MAX_PARTITION_SIZE(max_partition_size),
-        BUFFER_SIZE(buffer_size),
+        BASE_BUFFER_TRACK_SIZE(buffer_size),
         MAPPING_CACHE_SIZE(mapping_cache_size),
         SEGMENT_SIZE(segment_size),
 
-        SECTORS_OF_BUFFER((BUFFER_SIZE - BUFFER_SIZE / 2) * SECTORS_PER_BOTTOM_TRACK + (BUFFER_SIZE / 2 * SECTORS_PER_TOP_TRACK)),
+        TOTAL_BUFFER_SECTOR_SIZE((BASE_BUFFER_TRACK_SIZE - BASE_BUFFER_TRACK_SIZE / 2) * SECTORS_PER_BOTTOM_TRACK + (BASE_BUFFER_TRACK_SIZE / 2 * SECTORS_PER_TOP_TRACK)),
         TOTAL_SECTORS(SECTORS_PER_BOTTOM_TRACK * TOTAL_BOTTOM_TRACK + SECTORS_PER_TOP_TRACK * TOTAL_TOP_TRACK)
     {}
 
@@ -140,9 +143,9 @@ struct Options{
     // * parameters of Partition
 
     size_t HOT_DATA_DEF_SIZE;
-    const size_t PARTITION_SIZE;
+    const size_t BASE_PARTITION_TRACK_SIZE;
     const size_t MAX_PARTITION_SIZE;
-    const size_t BUFFER_SIZE;
+    const size_t BASE_BUFFER_TRACK_SIZE;           // in tracks
     const size_t MAPPING_CACHE_SIZE;
     const size_t SEGMENT_SIZE;
     
@@ -169,7 +172,7 @@ struct Options{
 
     // * calculated
 
-    const size_t SECTORS_OF_BUFFER;
+    const size_t TOTAL_BUFFER_SECTOR_SIZE;
     size_t TOTAL_SECTORS;
 
 };
@@ -228,6 +231,7 @@ public:
     virtual void initialize(std::ifstream &);
     virtual void run(std::ifstream &, std::ofstream &) = 0;
     virtual void evaluation(std::string &);
+    // virtual void verification();
 
     void read(const Request &request, std::ostream &output_file);
     virtual void write(const Request &, std::ostream &) = 0;
@@ -252,11 +256,12 @@ public:
     inline void set_LBA_to_PBA(const size_t &LBA, const size_t &PBA);
     #endif
 
-    inline size_t get_track(const size_t &PBA);
-    inline size_t get_track_head(const size_t &track);
+    inline size_t get_track(const size_t &PBA) const;
+    inline size_t get_track_head_sector(const size_t &track) const;
+    inline size_t get_track_tail_sector(const size_t &track) const;
 
     // * BOTTOM is even, TOP is odd
-    inline bool isTop(const size_t &track);
+    inline bool isTop(const size_t &track) const;
 
     // * For evaluation
     inline size_t get_LBA_size();
@@ -264,6 +269,7 @@ public:
     Evaluation eval;
     Options options;
     std::vector<bool> track_written;
+    std::priority_queue<Request> order_queue;
 
     void set_evaluation_stream(std::string &s) {evaluation_stream.open(s);}
     void set_distribution_stream(std::string &s) {distribution_stream.open(s);}
@@ -299,26 +305,32 @@ inline void IMR_Base::set_LBA_to_PBA(const size_t &LBA, const size_t &PBA){
 }
 #endif
 
-inline size_t IMR_Base::get_track(const size_t &PBA){
+inline size_t IMR_Base::get_track(const size_t &PBA) const{
     if (PBA == -1) return -1;
 
     size_t n = PBA / (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK);
     size_t r = PBA % (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK);
 
-    if (r > options.SECTORS_PER_BOTTOM_TRACK)
+    if (r >= options.SECTORS_PER_BOTTOM_TRACK)
         return 2 * n + 1;
     else
         return 2 * n;
 }
 
-inline size_t IMR_Base::get_track_head(const size_t &track){
+inline size_t IMR_Base::get_track_head_sector(const size_t &track) const{
     return 
-        track % 2 ? 
-        (track / 2 * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK)) + options.SECTORS_PER_BOTTOM_TRACK + 1 :
-        (track / 2 * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK)) + 1;
+        isTop(track) ? 
+        track / 2 * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK) + options.SECTORS_PER_BOTTOM_TRACK :
+        track / 2 * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK);
 }
 
-inline bool IMR_Base::isTop(const size_t &track){ 
+// TODO
+inline size_t IMR_Base::get_track_tail_sector(const size_t &track) const{
+    return 0;
+}
+
+// * even is bottom, odd is top
+inline bool IMR_Base::isTop(const size_t &track) const{ 
     return track % 2; 
 }
 

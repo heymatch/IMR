@@ -1,6 +1,6 @@
 # set C++ compiler
 CC := g++
-CFLAGS := -std=c++11 -O2 -static -pipe
+CFLAGS := -std=c++11 -O2 -static -pipe -Wall
 OUTPUT := IMR
 
 $(shell mkdir -p obj)
@@ -50,6 +50,6 @@ ifeq ($(OS), Windows_NT)
 	del .\obj\*.o
 	del IMR.exe
 else
-	rm ./obj/*.o
-	rm ./IMR
+	rm -f ./obj/*.o
+	rm -f ./IMR
 endif

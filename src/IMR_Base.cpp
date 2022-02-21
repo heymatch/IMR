@@ -1,7 +1,5 @@
 #include "IMR_Base.h"
 
-std::priority_queue<Request> order_queue;
-
 void IMR_Base::initialize(std::ifstream &setting_file){
     // * init options
     std::string line;
@@ -57,7 +55,7 @@ void IMR_Base::evaluation(std::string &evaluation_file){
     evaluation_stream << "options.APPEND_COLD_SIZE: "   << options.APPEND_COLD_SIZE     << "\n";
 
     evaluation_stream << "=== Trace Information ==="                                    << "\n";
-    evaluation_stream << "eval.trace_requests: "        << eval.trace_requests          << "\n";
+    evaluation_stream << "eval.trace_requests: "        << eval.trace_total_requests          << "\n";
     evaluation_stream << "eval.append_trace_size: "     << eval.append_trace_size       << "\n";
     evaluation_stream << "eval.max_LBA: "               << eval.max_LBA                 << "\n";
 
@@ -252,7 +250,7 @@ void IMR_Base::read_file(std::istream &input_file){
         append_trace_size += trace.size;
     }
 
-    eval.trace_requests = trace_requests;
+    eval.trace_total_requests = trace_requests;
     eval.append_trace_size = append_trace_size;
     eval.shifting_address = min_addr;
     eval.max_LBA = max_addr - min_addr;

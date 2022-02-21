@@ -18,21 +18,29 @@ Total Track: 21001
 Total Track Used: 41
 Total Track Used Ratio: 0.20%
 Update Counts (request): 0
-Last Hot Write Position: 19601
-Last Cold Write Position: 906621
-Hot Write Sectors: 10375
-Hot Update Sectors: 82
-Cold Write Sectors: 65474
-Cold Update Sectors: 480
+=== Partition Evaluation ===
+Last Hot Write Position: 19600
+Last Cold Write Position: 470587
+Hot Write Request Count: 662
+Hot Write Request Ratio: 0.66
+Hot Write Sector Count: 10375
+Hot Update Sector Count: 82
+Cold Write Request Count: 337
+Cold Write Request Ratio: 0.34
+Cold Write Sector Count: 65474
+Cold Update Sector Count: 480
 Cache Check Requests: 0
 Cache Load Requests: 0
 Cache Write Requests: 0
 Buffer Update Sectors: 0
 Write Buffer Sectors: 0
 Write Buffer Requests: 0
-Total Partitions: 1
-Average Partition Size: 500.00
-Average Partition Hot Size: 188.00
-Average Partition Cold Size: 0
-Average Partition Buffer Size: 0
-Sum Partition Size: 500
+Total Partitions Count: 1
+Average Partition Allocated Size: 243.00
+Average Partition Hot Track Size: 188.00
+Average Partition Cold Track Size: 33.00
+Average Partition Buffer Track Size: 21.00
+Sum Partition Allocated Size: 243
+Sum Partition Hot Track Size: 188
+Sum Partition Cold Track Size: 33
+Sum Partition Buffer Track Size: 21

@@ -2,5 +2,5 @@ Update Distribution:
 update_size_1,update_size_2,update_size_4,update_size_8,update_size_16,update_size_32,update_size_64,update_size_128,update_size_256,update_size_512,update_size_up
 2,0,0,10,1,0,0,0,2,0,0
 Partitions Status:
-Partition,Used_Hot_Tracks,Allocated_Hot_Size,Used_Cold_Tracks,Cache_Load_Counts,Partition_Reload_Sector_Counts
-     0,     5,   188,    33,     0,     0
+Partition_ID,Track_Head,Used_Hot_Tracks,Allocated_Hot_Size,Used_Cold_Tracks,Cache_Load_Counts,Partition_Reload_Sector_Counts
+     0,     0,     5,   188,    33,     0,     0

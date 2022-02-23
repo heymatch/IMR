@@ -248,6 +248,7 @@ void IMR_Base::read_file(std::istream &input_file){
 
         trace_requests += 1;
         append_trace_size += trace.size;
+        eval.max_request_write_size = std::max(eval.max_request_write_size, trace.size);
     }
 
     eval.trace_total_requests = trace_requests;
@@ -255,7 +256,8 @@ void IMR_Base::read_file(std::istream &input_file){
     eval.shifting_address = min_addr;
     eval.max_LBA = max_addr - min_addr;
 
-    std::clog << "<debug> max LBA: " << eval.max_LBA << std::endl;
+    std::clog << "<debug> eval.max_LBA: " << eval.max_LBA << std::endl;
+    std::clog << "<debug> eval.max_request_write_size: " << eval.max_request_write_size << std::endl;
 }
 
 void IMR_Base::write_file(std::ostream &output_file){

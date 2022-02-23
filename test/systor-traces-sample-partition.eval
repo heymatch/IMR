@@ -20,7 +20,7 @@ Total Track Used Ratio: 0.20%
 Update Counts (request): 0
 === Partition Evaluation ===
 Last Hot Write Position: 19600
-Last Cold Write Position: 470587
+Last Cold Write Position: 476294
 Hot Write Request Count: 662
 Hot Write Request Ratio: 0.66
 Hot Write Sector Count: 10375
@@ -44,3 +44,7 @@ Sum Partition Allocated Size: 243
 Sum Partition Hot Track Size: 188
 Sum Partition Cold Track Size: 33
 Sum Partition Buffer Track Size: 21
+eval.hot_after_hot_partition: 0
+eval.hot_after_cold_partition: 0
+eval.cold_after_hot_partition: 0
+eval.cold_after_cold_partition : 0

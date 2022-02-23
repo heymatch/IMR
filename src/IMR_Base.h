@@ -4,6 +4,7 @@
 #define MAP_MAPPING
 
 #include <cstdlib>
+#include <cstring>
 #include <vector>
 #include <fstream>
 #include <iostream>
@@ -43,7 +44,8 @@ struct Evaluation{
     size_t processing = 0;
 
     size_t shifting_address;
-    size_t max_LBA;
+    size_t max_LBA = 0;
+    size_t max_request_write_size = 0;
 
     size_t update_times = 0;
     // 1 ~ 1024 ~ up
@@ -74,6 +76,11 @@ struct Evaluation{
     size_t append_count = 0;
 
     size_t total_sector_used = 0;
+
+    size_t hot_after_hot_partition = 0;
+    size_t hot_after_cold_partition = 0;
+    size_t cold_after_hot_partition = 0;
+    size_t cold_after_cold_partition = 0;
 
     void insert_update_dist(const size_t &length){
         if(length == 0) return;
@@ -318,15 +325,16 @@ inline size_t IMR_Base::get_track(const size_t &PBA) const{
 }
 
 inline size_t IMR_Base::get_track_head_sector(const size_t &track) const{
-    return 
-        isTop(track) ? 
+    return isTop(track) ? 
         track / 2 * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK) + options.SECTORS_PER_BOTTOM_TRACK :
         track / 2 * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK);
 }
 
 // TODO
 inline size_t IMR_Base::get_track_tail_sector(const size_t &track) const{
-    return 0;
+    return isTop(track) ? 
+        track / 2 * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK) + options.SECTORS_PER_BOTTOM_TRACK + (options.SECTORS_PER_TOP_TRACK - 1):
+        track / 2 * (options.SECTORS_PER_BOTTOM_TRACK + options.SECTORS_PER_TOP_TRACK) + (options.SECTORS_PER_BOTTOM_TRACK - 1);
 }
 
 // * even is bottom, odd is top

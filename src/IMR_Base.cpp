@@ -37,6 +37,7 @@ void IMR_Base::initialize(std::ifstream &setting_file){
     LBA_to_PBA.resize(options.TOTAL_SECTORS, -1);
     PBA_to_LBA.resize(options.TOTAL_SECTORS, -1);
     #endif
+    eval.track_load_count.resize(options.TOTAL_TRACKS);
 }
 
 void IMR_Base::evaluation(std::string &evaluation_file){
@@ -107,12 +108,12 @@ void IMR_Base::read(const Request &request, std::ostream &output_file){
         request.device
     );
     for (int i = 0; i < request.size; i++) {
-        size_t readPBA = get_PBA(request.address + i);
-		if(readPBA == -1 && write_request.size == 0){
+        size_t PBA = get_PBA(request.address + i);
+		if(PBA == -1 && write_request.size == 0){
             write_request.size += 1;
             write_request.address = request.address + i;
         }
-        else if(readPBA == -1){
+        else if(PBA == -1){
             write_request.size += 1;
         }
         else if(write_request.size != 0){
@@ -126,8 +127,8 @@ void IMR_Base::read(const Request &request, std::ostream &output_file){
     }
 
     for (int i = 0; i < request.size; i++) {
-        size_t readPBA = get_PBA(request.address + i);
-		if(readPBA == -1){
+        size_t PBA = get_PBA(request.address + i);
+		if(PBA == -1){
             throw "<error> read at not written";
         }
 
@@ -135,7 +136,7 @@ void IMR_Base::read(const Request &request, std::ostream &output_file){
             Request(
                 request.timestamp,
                 'R',
-                readPBA,
+                PBA,
                 1,
                 request.device
             )
@@ -216,7 +217,7 @@ void IMR_Base::read_file(std::istream &input_file){
             trace.size = std::stoull(fields[5]);
         }
         else if(options.TRACE_TYPE == Trace_Type::MSR){
-            trace.timestamp = (double) (std::stoull(fields[0]) / 10000000 - 11644473600LL);
+            trace.timestamp = (double) (std::stod(fields[0]) / 10000000.0 - 11644473600.0);
             trace.iotype = fields[3][0];
             trace.device = 0;
             trace.address = std::stoull(fields[4]);

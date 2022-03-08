@@ -4,16 +4,18 @@ options.TOTAL_BOTTOM_TRACK: 10501
 options.TOTAL_TOP_TRACK: 10500
 options.TRACK_NUM: 21001
 options.HOT_DATA_DEF_SIZE: 64
-options.APPEND_PARTS: 10
+options.APPEND_PARTS: 1
 options.APPEND_COLD_SIZE: 0.20
 === Trace Information ===
 eval.trace_requests: 999
 eval.append_trace_size: 18921
 eval.max_LBA: 26479297
 === Evaluation ===
-Total Sector Used: 0 / 40899550
-Total Sector Used Ratio: 0.00%
-Total Track Used: 8 / 21001
+Total Sector: 40899550
+Total Sector Used: 15134
+Total Sector Used Ratio: 0.04%
+Total Track: 21001
+Total Track Used: 8
 Total Track Used Ratio: 0.04%
 Update Counts (request): 3327
-Last Write Position: 15143
+Last Write Position: 15134

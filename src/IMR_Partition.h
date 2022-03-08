@@ -20,7 +20,7 @@ public:
             Partition() :
             cold_extending(false),
             hot_used_track(0),
-            cache_load_counts(0)
+            cache_load_count(0)
             {}
 
             Partition(const IMR_Partition &, const size_t, const IMR_Partition::Partition::HOT_ZONE);
@@ -29,8 +29,12 @@ public:
             size_t get_init_cold_write_position();
 
             size_t partition_head_track;
-            size_t partition_alloc_track;
+            size_t partition_tail_track;
+            size_t partition_base_track;
+            size_t partition_alloc_track = 0;
+            size_t partition_used_track = 0;
 
+            size_t hot_base_track;
             size_t hot_alloc_track;
             size_t hot_head_track; 
             size_t hot_used_track = 0;
@@ -51,11 +55,12 @@ public:
 
             size_t cold_used_track = 0;
             size_t cold_head_track;
+            size_t cold_tail_track;
             size_t cold_head_sector;
             size_t cold_reservation_sector;
             size_t cold_end_sector;
             
-            size_t used_track_size = 0;
+            
             size_t mapping_track;
             size_t id;
 
@@ -89,7 +94,8 @@ public:
             bool cold_extending = false;
             
             
-            size_t cache_load_counts = 0;
+            size_t cache_load_count = 0;
+            size_t cache_hit_count = 0;
             size_t partition_reload_begin_sector_count = 0;
             size_t partition_reload_end_sector_count = 0;
             size_t partition_reload_request_count = 0;
@@ -132,15 +138,13 @@ public:
     void cache_partition(const Request &request, const size_t &partition_number, std::ostream &);
 
     inline size_t get_partition_position(const size_t &track){
-        size_t i = 0;
-        size_t total = 0;
-        for(size_t i = 0; i < partitions.size(); ++i) {
-            size_t used_tracks = partitions[i].hot_alloc_track + partitions[i].buffer_alloc_track + 1 + partitions[i].cold_used_track;
-            if(partitions[i].partition_head_track <= track && track < partitions[i].partition_head_track + partitions[i].partition_alloc_track){
+        for(size_t i = 0; i < partitions.size()-1; ++i) {
+            size_t used_tracks = partitions[i].hot_alloc_track + partitions[i].buffer_alloc_track + 1 + partitions[i].cold_used_track + 3;
+            if(partitions[i].partition_head_track <= track && track < partitions[i+1].partition_head_track){
                 return i;
             }
         }
-        return 0;
+        return partitions.size()-1;
     }
 
 

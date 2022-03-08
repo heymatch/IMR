@@ -15,29 +15,6 @@
 #include <iomanip>
 
 struct Evaluation{
-    Evaluation(){
-        update_times = 0;
-        inplace_update_count = 0;
-        outplace_update_count = 0;
-        direct_update_bottom_count = 0;
-        direct_update_top_count = 0;
-
-        hot_write_sector_count = 0;
-        hot_update_times = 0;
-
-        cold_write_sectors = 0;
-        cold_update_times = 0;
-
-        buffer_update_times = 0;
-
-        cache_check_times = 0;
-        cache_load_times = 0;
-        cache_write_times = 0;
-
-        write_buffer_times = 0;
-        write_buffer_requests = 0;
-    }
-
     size_t append_trace_size = 0;
     size_t trace_total_size = 0;
     size_t trace_total_requests = 0;
@@ -50,6 +27,7 @@ struct Evaluation{
     size_t update_times = 0;
     // 1 ~ 1024 ~ up
     size_t update_dist[11];
+    std::vector<size_t> track_load_count;
 
     size_t inplace_update_count = 0;
     size_t outplace_update_count = 0;
@@ -139,7 +117,7 @@ struct Options{
         TOTAL_SECTORS(SECTORS_PER_BOTTOM_TRACK * TOTAL_BOTTOM_TRACK + SECTORS_PER_TOP_TRACK * TOTAL_TOP_TRACK)
     {}
 
-    // * parameters of disk
+    // * parameters for disk
 
     size_t TOTAL_TRACKS;
     const size_t SECTORS_PER_BOTTOM_TRACK;
@@ -147,7 +125,7 @@ struct Options{
     size_t TOTAL_BOTTOM_TRACK;
     size_t TOTAL_TOP_TRACK;
 
-    // * parameters of Partition
+    // * parameters for Partition
 
     size_t HOT_DATA_DEF_SIZE;
     const size_t BASE_PARTITION_TRACK_SIZE;
@@ -160,7 +138,7 @@ struct Options{
 
     // * translator options
 
-    Update_Method UPDATE_METHOD;
+    Update_Method UPDATE_METHOD = Update_Method::IN_PLACE;
     Trace_Type TRACE_TYPE;
     std::string INPUT_FILE;     // input trace
     std::string OUTPUT_FILE;    // output trace

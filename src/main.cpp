@@ -89,10 +89,6 @@ int main(int argc, char **argv){
         }
 
         disk->initialize(setting_stream);
-        // clog << "<debug> " << disk->get_track_head_sector(0) << endl;
-        // clog << "<debug> " << disk->get_track_tail_sector(0) << endl;
-        // clog << "<debug> " << disk->get_track_head_sector(1) << endl;
-        // clog << "<debug> " << disk->get_track_tail_sector(1) << endl;
         disk->run(input_stream, output_stream);
     }
     catch(const char *e){

@@ -354,6 +354,7 @@ void IMR_Crosstrack::outplace_crosstrack_write(const Request &request, std::ostr
 void IMR_Crosstrack::evaluation(std::string &evaluation_file){
     IMR_Base::evaluation(evaluation_file);
 
+    evaluation_stream << "=== Crosstrack Evaluation ==="                                 << "\n";
     evaluation_stream << "Last Write Position: "                    << write_position << "\n";
     evaluation_stream << "Direct Update Bottom Count (sector): "    << eval.direct_update_bottom_count << "\n";
     evaluation_stream << "Direct Update Top Count (sector): "       << eval.direct_update_top_count << "\n";

@@ -41,8 +41,8 @@ void IMR_Base::initialize(std::ifstream &setting_file){
 }
 
 void IMR_Base::evaluation(std::string &evaluation_file){
-    evaluation_stream.open(evaluation_file + ".eval");
-    distribution_stream.open(evaluation_file + ".dist");
+    evaluation_stream.open(evaluation_file + "eval");
+    distribution_stream.open(evaluation_file + "dist");
 
     evaluation_stream << std::fixed << std::setprecision(2);
 
@@ -76,11 +76,12 @@ void IMR_Base::evaluation(std::string &evaluation_file){
         if(track_written[i]) ++total_track_used;
     }
     size_t total_tracks = options.TOTAL_TOP_TRACK + options.TOTAL_BOTTOM_TRACK;
-    evaluation_stream << "Total Track: "                << total_tracks                 << "\n";
-    evaluation_stream << "Total Track Used: "           << total_track_used             << "\n";
-    evaluation_stream << "Total Track Used Ratio: "     << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
+    evaluation_stream << "Total Track: "                        << total_tracks                 << "\n";
+    evaluation_stream << "Total Track Used: "                   << total_track_used             << "\n";
+    evaluation_stream << "Total Track Used Ratio: "             << ((double) total_track_used / (double) total_tracks) * 100.0 << "%" << "\n";
 
-    evaluation_stream << "Update Counts (request): "    << eval.update_times            << "\n";
+    evaluation_stream << "Update Counts (request): "            << eval.update_times            << "\n";
+    evaluation_stream << "eval.read_seek_distance_total: "      << eval.read_seek_distance_total            << "\n";
 
 
     distribution_stream << "Update Distribution: " << "\n";
@@ -126,10 +127,20 @@ void IMR_Base::read(const Request &request, std::ostream &output_file){
         write(write_request, output_file);
     }
 
+    size_t last_track = get_track(get_PBA(request.address));
     for (int i = 0; i < request.size; i++) {
         size_t PBA = get_PBA(request.address + i);
 		if(PBA == -1){
             throw "<error> read at not written";
+        }
+
+        size_t cur_track = get_track(PBA);
+        if(cur_track != last_track){
+            if(cur_track < last_track)
+                eval.read_seek_distance_total += last_track - cur_track;
+            else
+                eval.read_seek_distance_total += cur_track - last_track;
+            last_track = cur_track;
         }
 
         requests.push_back(

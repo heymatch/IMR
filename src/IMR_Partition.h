@@ -147,7 +147,11 @@ public:
         return partitions.size()-1;
     }
 
-
+    // * get if hot, cold, or buffer track
+    // * hot: 1, cold: 2, buffer: 3
+    int get_track_kind(const size_t track){
+        return 0;
+    }
     
 };
 

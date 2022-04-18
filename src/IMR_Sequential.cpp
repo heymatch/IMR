@@ -463,5 +463,6 @@ void IMR_Sequential::outplace_sequential_write(const Request &request, std::ostr
 void IMR_Sequential::evaluation(std::string &evaluation_file){
     IMR_Base::evaluation(evaluation_file);
 
+    evaluation_stream << "=== Sequential Evaluation ==="                                 << "\n";
     evaluation_stream << "Last Write Position: " << write_position << "\n";
 }

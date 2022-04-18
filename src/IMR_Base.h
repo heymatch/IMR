@@ -60,6 +60,12 @@ struct Evaluation{
     size_t cold_after_hot_partition = 0;
     size_t cold_after_cold_partition = 0;
 
+    
+    size_t hot_cold_track_switch_write_count = 0;
+    size_t hot_cold_track_switch_read_count = 0;
+
+    size_t read_seek_distance_total = 0;
+
     void insert_update_dist(const size_t &length){
         if(length == 0) return;
 

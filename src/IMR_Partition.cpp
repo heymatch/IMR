@@ -150,6 +150,7 @@ void IMR_Partition::read(const Request &request, std::ostream &output_file){
         write(write_request, output_file);
     }
 
+    size_t last_track = get_track(get_PBA(request.address));
     for (int i = 0; i < request.size; i++) {
         size_t PBA = get_PBA(request.address + i);
 		if(PBA == -1){
@@ -161,6 +162,15 @@ void IMR_Partition::read(const Request &request, std::ostream &output_file){
             cache_partition(request, currentPartitionNumber, output_file);
         }
         if(eval_reload_partition(get_track(PBA))){
+        }
+
+        size_t cur_track = get_track(PBA);
+        if(cur_track != last_track){
+            if(cur_track < last_track)
+                eval.read_seek_distance_total += last_track - cur_track;
+            else
+                eval.read_seek_distance_total += cur_track - last_track;
+            last_track = cur_track;
         }
 
         requests.push_back(

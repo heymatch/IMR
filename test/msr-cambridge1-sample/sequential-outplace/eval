@@ -12,14 +12,12 @@ eval.append_trace_size: 18921
 eval.max_LBA: 26479297
 === Evaluation ===
 Total Sector: 40899550
-Total Sector Used: 15120
+Total Sector Used: 15134
 Total Sector Used Ratio: 0.04%
 Total Track: 21001
 Total Track Used: 8
 Total Track Used Ratio: 0.04%
 Update Counts (request): 3327
-Last Write Position: 28035
-Direct Update Bottom Count (sector): 3327
-Direct Update Top Count (sector): 0
-Inplace Update Count (sector): 0
-Outplace Update Count (sector): 0
+eval.read_seek_distance_total: 7
+=== Sequential Evaluation ===
+Last Write Position: 15134

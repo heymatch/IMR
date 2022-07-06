@@ -1,5 +1,5 @@
 === Options ===
-options.UPDATE_METHOD: 1
+options.UPDATE_METHOD: 0
 options.TOTAL_BOTTOM_TRACK: 10501
 options.TOTAL_TOP_TRACK: 10500
 options.TRACK_NUM: 21001
@@ -12,10 +12,12 @@ eval.append_trace_size: 18921
 eval.max_LBA: 26479297
 === Evaluation ===
 Total Sector: 40899550
-Total Sector Used: 15134
+Total Sector Used: 15120
 Total Sector Used Ratio: 0.04%
 Total Track: 21001
 Total Track Used: 8
 Total Track Used Ratio: 0.04%
 Update Counts (request): 3327
-Last Write Position: 15134
+eval.read_seek_distance_total: 7
+=== Sequential Evaluation ===
+Last Write Position: 15120

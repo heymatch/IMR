@@ -1,6 +1,6 @@
 Update Distribution: 
 update_size_1,update_size_2,update_size_4,update_size_8,update_size_16,update_size_32,update_size_64,update_size_128,update_size_256,update_size_512,update_size_up
-2,0,0,9,0,0,0,0,0,0,0
+13,17,13,168,56,26,4,0,0,0,0
 Partitions Status:
 Partition_ID,Head_Track,Tail_Track,Hot_Base_Track,Hot_Alloc_Track,Hot_Used_Track,Buffer_Alloc_Track,Cold_Used_Tracks,Cache_Load_Count,Cache_Hit_Count,Reload_Begin_Sector_Count,Reload_End_Sector_Count
-           0,         0,       244,           188,            188,             5,                21,              33,                0,               0,                        0,                      0
+           0,         0,       211,           188,            188,             5,                21,               2,                0,               0,                        0,                      0

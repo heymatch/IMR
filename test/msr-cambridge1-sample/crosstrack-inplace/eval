@@ -8,20 +8,20 @@ options.APPEND_PARTS: 1
 options.APPEND_COLD_SIZE: 0.20
 === Trace Information ===
 eval.trace_requests: 999
-eval.append_trace_size: 76411
-eval.max_LBA: 9444778269
+eval.append_trace_size: 18921
+eval.max_LBA: 26479297
 === Evaluation ===
 Total Sector: 40899550
-Total Sector Used: 75849
-Total Sector Used Ratio: 0.19%
+Total Sector Used: 15120
+Total Sector Used Ratio: 0.04%
 Total Track: 21001
-Total Track Used: 37
-Total Track Used Ratio: 0.18%
-Update Counts (request): 74
-eval.read_seek_distance_total: 118
+Total Track Used: 8
+Total Track Used Ratio: 0.04%
+Update Counts (request): 3327
+eval.read_seek_distance_total: 12
 === Crosstrack Evaluation ===
-Last Write Position: 142269
+Last Write Position: 28035
 Direct Update Bottom Count (sector): 0
 Direct Update Top Count (sector): 0
-Inplace Update Count (sector): 74
+Inplace Update Count (sector): 3327
 Outplace Update Count (sector): 0
